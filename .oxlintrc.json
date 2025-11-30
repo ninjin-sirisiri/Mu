@@ -1,0 +1,109 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "import",
+    "jsx-a11y",
+    "oxc",
+    "promise",
+    "react",
+    "react-perf",
+    "typescript",
+    "unicorn"
+  ],
+  "ignorePatterns": [
+    "build.ts",
+    "src/frontend.tsx",
+    "bun-env.d.ts",
+    "src/index.ts",
+    "src-tauri/**",
+    "node_modules/**",
+    "dist/**",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "pedantic": "warn",
+    "perf": "warn",
+    "style": "warn",
+    "restriction": "warn",
+    "nursery": "off"
+  },
+  "rules": {
+    "jsx-a11y/no-autofocus": "off",
+    "react-perf/jsx-no-new-function-as-prop": "off",
+    "no-plusplus": [
+      "error",
+      {
+        "allowForLoopAfterthoughts": true
+      }
+    ],
+    "no-restricted-globals": [
+      "error",
+      "event"
+    ],
+    "import/no-default-export": "off",
+    "oxc/no-async-await": "off",
+    "oxc/no-optional-chaining": "off",
+    "oxc/no-rest-spread-properties": "off",
+    "react/forbid-dom-props": "off",
+    "react/forbid-elements": "off",
+    "react/only-export-components": "off",
+    "react/jsx-filename-extension": "off",
+    "react/button-has-type": "off",
+    "typescript/explicit-function-return-type": "off",
+    "typescript/explicit-module-boundary-types": "off",
+    "typescript/no-import-type-side-effects": "off",
+    "typescript/non-nullable-type-assertion-style": "off",
+    "typescript/prefer-literal-enum-member": "off",
+    "import/no-unassigned-import": [
+      "warn",
+      {
+        "allow": [
+          "*/*.css"
+        ]
+      }
+    ],
+    "promise/always-return": "off",
+    "react/react-in-jsx-scope": "off",
+    "max-dependencies": "off",
+    "group-exports": "off",
+    "no-named-export": "off",
+    "func-style": [
+      "error",
+      "declaration"
+    ],
+    "typescript/consistent-type-definitions": [
+      "error",
+      "type"
+    ],
+    "unicorn/filename-case": "off",
+    "max-params": "off",
+    "prefer-default-export": "off",
+    "id-length": "off",
+    "no-ternary": "off",
+    "sort-keys": "off",
+    "unicorn/no-null": "off",
+    "curly": "off",
+    "no-magic-numbers": "off",
+    "import/consistent-type-specifier-style": [
+      "warn",
+      "prefer-inline"
+    ],
+    "sort-imports": "off",
+    "max-lines-per-function": "off",
+    "max-lines": "off",
+    "jsx-a11y/click-events-have-key-events": "off",
+    "react-perf/jsx-no-new-object-as-prop": "off",
+    "import/no-cycle": "off",
+    "no-undefined": "off",
+    "import/exports-last": "off",
+    "prefer-destructuring": "off",
+    "unicorn/switch-case-braces": "off",
+    "init-declarations": "off",
+    "max-depth": "off",
+    "no-continue": "off",
+    "new-cap": "off"
+  }
+}
