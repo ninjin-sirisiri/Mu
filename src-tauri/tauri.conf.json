@@ -10,15 +10,7 @@
     "beforeBuildCommand": "bun run build"
   },
   "app": {
-    "windows": [
-      {
-        "title": "Mu",
-        "width": 800,
-        "height": 600,
-        "maximized": true,
-        "decorations": false
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": null
     }
