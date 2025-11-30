@@ -6,7 +6,7 @@
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
 
-[🇯🇵 Japanese / 日本語](docs/README.md)
+
 
 <br />
 <div align="center">
@@ -17,7 +17,7 @@
   <h3 align="center">Mu</h3>
 
   <p align="center">
-    A lightweight, minimalistic, and immersive web browser developed as an antithesis to the "feature-rich and heavy" modern browsers.
+    「多機能で重い」現代のブラウザへのアンチテーゼとして開発された、軽量・ミニマル・没入型のWebブラウザ。
     <br />
     <a href="https://github.com/ninjin-sirisiri/mu"><strong>Explore the docs »</strong></a>
     <br />
@@ -65,14 +65,14 @@
 
 [![Product Name Screen Shot][product-screenshot]](https://github.com/ninjin-sirisiri/my-images/blob/main/mu/mu-screenshot.png)
 
-Mu is a **lightweight, minimalistic, and immersive** web browser designed for users who conduct information gathering and long-form reading on the Web.
+Muは、Web上の情報収集や長文読解を行うユーザーのために設計された、**軽量・ミニマル・没入型**のWebブラウザです。
 
-It eliminates the "feature bloat" and "heaviness" of traditional browsers, providing an environment where users can focus on content.
+従来のブラウザの「多機能さ」や「重さ」を排除し、ユーザーがコンテンツに集中できる環境を提供します。
 
-### Features
-*   **Minimalist Design:** Visual noise is eliminated to the limit.
-*   **Lightweight:** Uses the OS standard rendering engine to suppress memory consumption.
-*   **Keyboard-centric Operation:** Efficient navigation using the command palette.
+### 特徴
+*   **ミニマルなデザイン:** 視覚的なノイズを極限まで排除。
+*   **軽量:** OS標準のレンダリングエンジンを使用し、メモリ消費を抑制。
+*   **キーボード中心の操作:** コマンドパレットを使用した効率的なナビゲーション。
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -85,7 +85,7 @@ It eliminates the "feature bloat" and "heaviness" of traditional browsers, provi
 * [![React][React.js]][React-url]
 * [![TypeScript][TypeScript]][TypeScript-url]
 * [![Tailwind CSS][Tailwind]][Tailwind-url]
-* [![Simple Stack Store][Simple Stack Store]][Simple Stack Store-url]
+* [![Simple Stack Store][Simple Stack Store]][Simple Stack Store-url]s
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -94,7 +94,7 @@ It eliminates the "feature bloat" and "heaviness" of traditional browsers, provi
 <!-- GETTING STARTED -->
 ## Getting Started
 
-Here are the steps to set up and run Mu in your local environment.
+ローカル環境でMuをセットアップして実行する手順です。
 
 ### Prerequisites
 
@@ -103,19 +103,19 @@ Here are the steps to set up and run Mu in your local environment.
     bun add bun@latest -g
     ```
 *   Rust & Cargo
-    *   Follow the instructions on the [Rust official website](https://www.rust-lang.org/tools/install) to set up your environment.
+    *   [Rust公式サイト](https://www.rust-lang.org/tools/install)の手順に従って環境を構築してください。
 
 ### Installation
 
-1.  Clone the repository
+1.  リポジトリをクローン
     ```sh
     git clone https://github.com/ninjin-sirisiri/mu.git
     ```
-2.  Install packages
+2.  パッケージをインストール
     ```sh
     bun add
     ```
-3.  Start the development server
+3.  開発サーバーを起動
     ```sh
     bun run tauri dev
     ```
@@ -127,13 +127,13 @@ Here are the steps to set up and run Mu in your local environment.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-### Command Palette
-Press `Ctrl+K` (or `Cmd+K` on macOS) to open the command palette. From here you can enter URLs or search the web. There is no traditional address bar.
+### コマンドパレット
+`Ctrl+K` (macOSでは `Cmd+K`) を押すとコマンドパレットが開きます。ここからURLの入力やWeb検索が行えます。従来のアドレスバーはありません。
 
-### Sidebar and Vertical Tabs
-Tabs and settings are consolidated in the sidebar.
-*   **Placement:** Can be placed on either the left or right side.
-*   **Display Mode:** Choose between always visible or "Auto-hide" which shows only on mouse hover.
+### サイドバーと垂直タブ
+タブや設定はサイドバーに集約されています。
+*   **配置:** 左側・右側の好きな方に配置可能。
+*   **表示モード:** 常時表示、またはマウスオーバー時のみ表示する「自動隠蔽」を選択できます。
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -142,12 +142,12 @@ Tabs and settings are consolidated in the sidebar.
 <!-- ROADMAP -->
 ## Roadmap
 
-- [x] Basic browsing features (WebView)
-- [x] Command Palette
-- [x] Vertical Tabs (Sidebar)
-- [ ] Sidebar customization (Left/Right placement, Auto-hide)
-- [ ] Ad blocking feature
-- [ ] Mobile support (iOS / Android)
+- [x] 基本的なブラウジング機能 (WebView)
+- [x] コマンドパレット
+- [x] 垂直タブ (サイドバー)
+- [ ] サイドバーのカスタマイズ (左右配置、自動隠蔽)
+- [ ] 広告ブロック機能
+- [ ] モバイル対応 (iOS / Android)
 
 See the [open issues](https://github.com/ninjin-sirisiri/mu/issues) for a full list of proposed features (and known issues).
 
@@ -158,16 +158,16 @@ See the [open issues](https://github.com/ninjin-sirisiri/mu/issues) for a full l
 <!-- CONTRIBUTING -->
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+貢献こそが、オープンソースコミュニティを学び、刺激を受け、創造する素晴らしい場所にしているのです。皆様のあらゆる貢献に**心より感謝**申し上げます。
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+改善案がございましたら、リポジトリをフォークしプルリクエストを作成してください。「enhancement」タグ付きでイシューを開くことも可能です。
+プロジェクトへのスターも忘れずに！改めて感謝申し上げます。
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. プロジェクトをフォークする
+2. 機能ブランチを作成する（`git checkout -b feature/AmazingFeature`）
+3. 変更をコミットする（`git commit -m 'Add some AmazingFeature'`）
+4. ブランチにプッシュする（`git push origin feature/AmazingFeature`）
+5. プルリクエストを開く
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -176,7 +176,7 @@ Don't forget to give the project a star! Thanks again!
 <!-- LICENSE -->
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+MITライセンスのもとで配布されています。詳細は `LICENSE` ファイルを参照してください。
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -185,7 +185,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Project Link: [https://github.com/ninjin-sirisiri/mu](https://github.com/ninjin-sirisiri/mu)
+Muのリポジトリは [GitHub](https://github.com/ninjin-sirisiri/mu) で公開されています。
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -198,6 +198,7 @@ Project Link: [https://github.com/ninjin-sirisiri/mu](https://github.com/ninjin-
 * [React](https://reactjs.org/)
 * [Tailwind CSS](https://tailwindcss.com/)
 * [Simple Stack Store](https://github.com/simple-stack/store)
+* [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
