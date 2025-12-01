@@ -43,20 +43,22 @@ export function NavigationControls() {
     }
   }
 
-  function handleMinimize() {
-    appWindow.minimize();
+  async function handleMinimize() {
+    await appWindow.minimize();
   }
 
-  function handleMaximize() {
-    appWindow.toggleMaximize();
+  async function handleMaximize() {
+    await appWindow.toggleMaximize();
   }
 
-  function handleClose() {
-    appWindow.close();
+  async function handleClose() {
+    await appWindow.close();
   }
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-gray-900/90 backdrop-blur-md border-b border-gray-700 text-white shadow-lg">
+    <div
+      data-tauri-drag-region
+      className="flex items-center justify-between px-4 py-2 bg-gray-900/90 backdrop-blur-md border-b border-gray-700 text-white shadow-lg">
       <div className="flex items-center space-x-2">
         <button
           onClick={handleBack}

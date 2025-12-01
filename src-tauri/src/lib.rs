@@ -82,9 +82,12 @@ pub fn run() {
 
       let window = tauri::window::WindowBuilder::new(app, "main")
         .title("Mu")
-        .inner_size(1600.0, 900.0)
+        .inner_size(800.0, 600.0)
+        .min_inner_size(280.0, 280.0)
         .maximized(true)
         .decorations(false)
+        .resizable(true)
+        .shadow(true)
         .build()?;
 
       let size = window.inner_size()?;
