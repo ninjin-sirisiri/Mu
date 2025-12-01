@@ -1,4 +1,5 @@
 use std::sync::Mutex;
+use tauri::Emitter;
 use tauri::Manager;
 use tauri::WebviewUrl;
 
@@ -20,13 +21,56 @@ fn set_ui_height(height: u32, state: tauri::State<AppState>, app_handle: tauri::
   }
 }
 
+#[tauri::command]
+fn navigate(app_handle: tauri::AppHandle, url: String) {
+  let url = if url.starts_with("http://") || url.starts_with("https://") {
+    url
+  } else {
+    format!("https://{}", url)
+  };
+
+  if url.parse::<tauri::Url>().is_ok()
+    && let Some(webview) = app_handle.get_webview("content")
+  {
+    // Use JS navigation as fallback for load_url
+    let _ = webview.eval(format!("window.location.assign('{}')", url));
+  }
+}
+
+#[tauri::command]
+fn go_back(app_handle: tauri::AppHandle) {
+  if let Some(webview) = app_handle.get_webview("content") {
+    let _ = webview.eval("window.history.back()");
+  }
+}
+
+#[tauri::command]
+fn go_forward(app_handle: tauri::AppHandle) {
+  if let Some(webview) = app_handle.get_webview("content") {
+    let _ = webview.eval("window.history.forward()");
+  }
+}
+
+#[tauri::command]
+fn reload(app_handle: tauri::AppHandle) {
+  if let Some(webview) = app_handle.get_webview("content") {
+    let _ = webview.eval("window.location.reload()");
+  }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
     .manage(AppState {
       height: Mutex::new(20),
     })
-    .invoke_handler(tauri::generate_handler![set_ui_height])
+    .invoke_handler(tauri::generate_handler![
+      set_ui_height,
+      navigate,
+      go_back,
+      go_forward,
+      reload
+    ])
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -50,7 +94,10 @@ pub fn run() {
         tauri::webview::WebviewBuilder::new(
           "content",
           WebviewUrl::External("https://google.com".parse().unwrap()),
-        ),
+        )
+        .on_page_load(|webview, payload| {
+          let _ = webview.emit_to("app", "content_navigation", payload.url().to_string());
+        }),
         tauri::LogicalPosition::new(0, 0),
         tauri::Size::Physical(size),
       )?;
