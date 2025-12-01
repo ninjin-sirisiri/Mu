@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
 
 export function NavigationControls() {
   const [url, setUrl] = useState('');
@@ -58,52 +60,52 @@ export function NavigationControls() {
   return (
     <div
       data-tauri-drag-region
-      className="flex items-center justify-between px-4 py-2 bg-gray-900/90 backdrop-blur-md border-b border-gray-700 text-white shadow-lg">
+      className="flex items-center justify-between px-4 py-2 bg-gray-400 backdrop-blur-md border-b border-gray-700 text-white shadow-lg">
       <div className="flex items-center space-x-2">
-        <button
-          onClick={handleBack}
-          className="p-2 hover:bg-gray-700 rounded-full transition-colors">
+        <Button
+          variant="ghost"
+          onClick={handleBack}>
           <ArrowLeft size={18} />
-        </button>
-        <button
-          onClick={handleForward}
-          className="p-2 hover:bg-gray-700 rounded-full transition-colors">
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={handleForward}>
           <ArrowRight size={18} />
-        </button>
-        <button
-          onClick={handleRefresh}
-          className="p-2 hover:bg-gray-700 rounded-full transition-colors">
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={handleRefresh}>
           <RotateCw size={18} />
-        </button>
+        </Button>
       </div>
 
       <div className="flex-1 mx-4">
-        <input
+        <Input
           type="text"
           value={url}
           onChange={e => setUrl(e.target.value)}
           onKeyDown={handleNavigate}
           placeholder="Search or enter address"
-          className="w-full bg-gray-800 border border-gray-600 rounded-full px-4 py-1.5 text-sm focus:outline-none focus:border-blue-500 transition-colors text-gray-200 placeholder-gray-400"
         />
       </div>
 
       <div className="flex items-center space-x-2">
-        <button
-          onClick={handleMinimize}
-          className="p-2 hover:bg-gray-700 rounded-full transition-colors">
+        <Button
+          variant="ghost"
+          onClick={handleMinimize}>
           <Minus size={18} />
-        </button>
-        <button
-          onClick={handleMaximize}
-          className="p-2 hover:bg-gray-700 rounded-full transition-colors">
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={handleMaximize}>
           <Square size={18} />
-        </button>
-        <button
-          onClick={handleClose}
-          className="p-2 hover:bg-red-600 rounded-full transition-colors">
+        </Button>
+        <Button
+          className="hover:bg-red-600"
+          variant="ghost"
+          onClick={handleClose}>
           <X size={18} />
-        </button>
+        </Button>
       </div>
     </div>
   );
