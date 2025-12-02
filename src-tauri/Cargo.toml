@@ -21,6 +21,8 @@ tauri-build = { version = "2.5.3", features = [] }
 serde_json = "1.0"
 serde = { version = "1.0.228", features = ["derive"] }
 log = "0.4.28"
-tauri = { version = "2.9.4", features = ["unstable"] }
+tauri = { version = "2.9.4", features = ["unstable", "wry"] }
 tauri-plugin-log = "2.7.1"
 uuid = { version = "1.11", features = ["v4"] }
+webview2-com = "0.36"
+windows = { version = "0.61", features = ["Win32_System_WinRT"] }

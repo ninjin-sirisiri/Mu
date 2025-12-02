@@ -45,7 +45,7 @@ export class TabOperationError extends Error {
 /**
  * Default URL for new tabs
  */
-export const DEFAULT_TAB_URL = 'about:blank';
+export const DEFAULT_TAB_URL = 'https://www.google.com';
 
 /**
  * Default title for new tabs

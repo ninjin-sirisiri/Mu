@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { updateTab, getActiveTab } from '../store/tabStore';
 
@@ -15,6 +16,14 @@ export type PageLoadEvent = {
  */
 export type NavigationEvent = {
   url: string;
+};
+
+/**
+ * Event payload for page info (title and favicon) from the Rust backend
+ */
+export type PageInfoEvent = {
+  title: string;
+  favicon: string | null;
 };
 
 /**
@@ -55,6 +64,12 @@ export function useWebViewEvents(): void {
             isLoading: false
           });
         }
+        // Fetch page title after page load completes
+        setTimeout(() => {
+          invoke('fetch_page_title').catch(() => {
+            // Silently ignore errors if fetch_page_title fails
+          });
+        }, 300);
       });
       unlisteners.push(unlistenLoadFinished);
 
@@ -80,6 +95,19 @@ export function useWebViewEvents(): void {
         }
       });
       unlisteners.push(unlistenContentNavigation);
+
+      // Listen for page info events (title and favicon)
+      // Requirements: 5.2, 5.3
+      const unlistenPageInfo = await listen<PageInfoEvent>('page_info', event => {
+        const activeTab = getActiveTab();
+        if (activeTab) {
+          updateTab(activeTab.id, {
+            title: event.payload.title || activeTab.title,
+            favicon: event.payload.favicon
+          });
+        }
+      });
+      unlisteners.push(unlistenPageInfo);
     }
 
     setupListeners();

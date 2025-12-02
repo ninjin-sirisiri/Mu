@@ -22,6 +22,13 @@ pub struct PageLoadEvent {
   pub is_loading: bool,
 }
 
+/// Event payload for page info (title and favicon)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PageInfoEvent {
+  pub title: String,
+  pub favicon: Option<String>,
+}
+
 /// Event payload for navigation events
 /// Emitted when the URL changes
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,6 +86,47 @@ async fn get_tab_info(app_handle: tauri::AppHandle) -> Result<TabInfo, String> {
     })
   } else {
     Err("Content webview not found".to_string())
+  }
+}
+
+/// Fetches the page title using WebView2 API on Windows
+#[tauri::command]
+fn fetch_page_title(app_handle: tauri::AppHandle) {
+  if let Some(webview) = app_handle.get_webview("content") {
+    let url = webview.url().map(|u| u.to_string()).unwrap_or_default();
+
+    // Get favicon from URL
+    let favicon_url = url.parse::<tauri::Url>().ok().and_then(|parsed| {
+      parsed
+        .host_str()
+        .map(|host| format!("https://www.google.com/s2/favicons?domain={}&sz=32", host))
+    });
+
+    let app_handle_clone = app_handle.clone();
+
+    // Use with_webview to access the underlying WebView2 and get title
+    #[cfg(target_os = "windows")]
+    let _ = webview.with_webview(move |wv| {
+      use windows::core::PWSTR;
+
+      let controller = wv.controller();
+      let core = unsafe { controller.CoreWebView2().unwrap() };
+
+      let mut title_ptr = PWSTR::null();
+      unsafe {
+        let _ = core.DocumentTitle(&mut title_ptr);
+        if !title_ptr.is_null() {
+          let title_str = title_ptr.to_string().unwrap_or_default();
+          if !title_str.is_empty() {
+            let page_info = PageInfoEvent {
+              title: title_str,
+              favicon: favicon_url.clone(),
+            };
+            let _ = app_handle_clone.emit_to("app", "page_info", page_info);
+          }
+        }
+      }
+    });
   }
 }
 
@@ -170,7 +218,8 @@ pub fn run() {
       switch_tab,
       close_tab,
       get_tab_info,
-      set_content_bounds
+      set_content_bounds,
+      fetch_page_title
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -227,11 +276,33 @@ pub fn run() {
               let _ = webview.emit_to("app", "navigation", nav_event);
             }
             TauriPageLoadEvent::Finished => {
+              let finished_url = url.clone();
               let event = PageLoadEvent {
-                url,
+                url: url.clone(),
                 is_loading: false,
               };
               let _ = webview.emit_to("app", "page_load_finished", event);
+
+              // Extract favicon URL using Google's favicon service
+              let favicon_url = finished_url.parse::<tauri::Url>().ok().and_then(|parsed| {
+                parsed
+                  .host_str()
+                  .map(|host| format!("https://www.google.com/s2/favicons?domain={}&sz=32", host))
+              });
+
+              // Get title from URL host as fallback
+              let title = if let Ok(parsed) = finished_url.parse::<tauri::Url>() {
+                parsed.host_str().unwrap_or("New Tab").to_string()
+              } else {
+                "New Tab".to_string()
+              };
+
+              // Emit page info event with host-based title and favicon
+              let page_info = PageInfoEvent {
+                title,
+                favicon: favicon_url,
+              };
+              let _ = webview.emit_to("app", "page_info", page_info);
             }
           }
         }),
