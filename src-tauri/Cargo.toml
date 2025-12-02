@@ -23,3 +23,4 @@ serde = { version = "1.0.228", features = ["derive"] }
 log = "0.4.28"
 tauri = { version = "2.9.4", features = ["unstable"] }
 tauri-plugin-log = "2.7.1"
+uuid = { version = "1.11", features = ["v4"] }

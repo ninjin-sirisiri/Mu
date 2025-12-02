@@ -60,21 +60,27 @@ export function NavigationControls() {
   return (
     <div
       data-tauri-drag-region
-      className="flex items-center justify-between px-4 py-2 bg-gray-400 backdrop-blur-md border-b border-gray-700 text-white shadow-lg">
-      <div className="flex items-center space-x-2">
+      className="flex items-center justify-between px-4 py-3.5 text-white">
+      <div className="flex items-center gap-2">
         <Button
           variant="ghost"
-          onClick={handleBack}>
+          size="sm"
+          onClick={handleBack}
+          className="text-gray-400 hover:text-gray-100 hover:bg-gray-700/50">
           <ArrowLeft size={18} />
         </Button>
         <Button
           variant="ghost"
-          onClick={handleForward}>
+          size="sm"
+          onClick={handleForward}
+          className="text-gray-400 hover:text-gray-100 hover:bg-gray-700/50">
           <ArrowRight size={18} />
         </Button>
         <Button
           variant="ghost"
-          onClick={handleRefresh}>
+          size="sm"
+          onClick={handleRefresh}
+          className="text-gray-400 hover:text-gray-100 hover:bg-gray-700/50">
           <RotateCw size={18} />
         </Button>
       </div>
@@ -86,24 +92,30 @@ export function NavigationControls() {
           onChange={e => setUrl(e.target.value)}
           onKeyDown={handleNavigate}
           placeholder="Search or enter address"
+          className="bg-gray-800/50 border-gray-700/50 text-gray-200 placeholder:text-gray-500 focus:border-blue-500/50 focus:ring-blue-500/20"
         />
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-2">
         <Button
           variant="ghost"
-          onClick={handleMinimize}>
+          size="sm"
+          onClick={handleMinimize}
+          className="text-gray-400 hover:text-gray-100 hover:bg-gray-700/50">
           <Minus size={18} />
         </Button>
         <Button
           variant="ghost"
-          onClick={handleMaximize}>
+          size="sm"
+          onClick={handleMaximize}
+          className="text-gray-400 hover:text-gray-100 hover:bg-gray-700/50">
           <Square size={18} />
         </Button>
         <Button
-          className="hover:bg-red-600"
           variant="ghost"
-          onClick={handleClose}>
+          size="sm"
+          onClick={handleClose}
+          className="text-gray-400 hover:text-gray-100 hover:bg-red-600/80">
           <X size={18} />
         </Button>
       </div>
