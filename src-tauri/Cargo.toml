@@ -26,3 +26,5 @@ tauri-plugin-log = "2.7.1"
 uuid = { version = "1.11", features = ["v4"] }
 webview2-com = "0.36"
 windows = { version = "0.61", features = ["Win32_System_WinRT"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+directories = "5.0"

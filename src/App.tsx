@@ -3,25 +3,26 @@ import { toast } from 'sonner';
 import { useStoreValue } from '@simplestack/store/react';
 import { invoke } from '@tauri-apps/api/core';
 import { NewTabModal } from './components/NewTabModal';
-import { Sidebar } from './components/Sidebar';
+import { SettingsView } from './components/SettingsView';
+import { ConnectedSidebar } from './components/Sidebar';
 import { TopNavBar } from './components/TopNavBar';
 import { Toaster } from './components/ui/sonner';
 import { useWebViewEvents } from './hooks/useWebViewEvents';
 import './index.css';
+import { settingsStore, loadSettings, listenForSettingsChanges } from './store/settingsStore';
 import { tabStore, getActiveTab } from './store/tabStore';
 
-const TRIGGER_LEFT = 16;
 const TRIGGER_TOP = 8;
-const SIDEBAR_WIDTH = 280;
 const TOPNAV_HEIGHT = 56;
 
 // Get view type from URL parameter
-function getViewType(): 'topnav' | 'sidebar' | 'dialog' | 'full' {
+function getViewType(): 'topnav' | 'sidebar' | 'dialog' | 'settings' | 'full' {
   const params = new URLSearchParams(globalThis.location.search);
   const view = params.get('view');
   if (view === 'topnav') return 'topnav';
   if (view === 'sidebar') return 'sidebar';
   if (view === 'dialog') return 'dialog';
+  if (view === 'settings') return 'settings';
   return 'full';
 }
 
@@ -44,6 +45,37 @@ export default function App() {
   // Subscribe to tab store to react to active tab changes
   const tabState = useStoreValue(tabStore);
   const activeTabId = tabState?.activeTabId ?? null;
+
+  // Subscribe to settings store for loading state
+  // Requirements: 3.2
+  const settingsState = useStoreValue(settingsStore);
+  const isSettingsLoading = settingsState?.isLoading ?? true;
+
+  // Load settings on app startup (only for sidebar view which uses settings)
+  // Requirements: 3.2
+  useEffect(() => {
+    if (viewType !== 'sidebar') return;
+
+    loadSettings();
+
+    // Listen for settings changes from settings WebView
+    let unlisten: (() => void) | null = null;
+    let mounted = true;
+
+    (async () => {
+      const fn = await listenForSettingsChanges();
+      if (mounted) {
+        unlisten = fn;
+      } else {
+        fn();
+      }
+    })();
+
+    return () => {
+      mounted = false;
+      unlisten?.();
+    };
+  }, [viewType]);
 
   // Navigate WebView when active tab changes (only in sidebar view which manages tabs)
   // Requirements: 2.1 - Clicking a tab displays its content
@@ -83,16 +115,25 @@ export default function App() {
   }
 
   if (viewType === 'sidebar') {
+    // Show loading state while settings are being loaded
+    // Requirements: 3.2
+    if (isSettingsLoading) {
+      return (
+        <div className="relative w-full h-screen bg-gray-900">
+          <Toaster />
+          <div className="flex items-center justify-center h-full">
+            <div className="text-gray-500 text-sm">Loading...</div>
+          </div>
+        </div>
+      );
+    }
+
+    // Use ConnectedSidebar which reads settings from the store
+    // Requirements: 4.3
     return (
       <div className="relative w-full h-screen">
         <Toaster />
-        <Sidebar
-          position="left"
-          mode="auto-hide"
-          width={SIDEBAR_WIDTH}
-          hideDelay={300}
-          triggerZoneWidth={TRIGGER_LEFT}
-        />
+        <ConnectedSidebar />
       </div>
     );
   }
@@ -106,6 +147,15 @@ export default function App() {
     );
   }
 
+  if (viewType === 'settings') {
+    return (
+      <div className="relative w-full h-screen">
+        <Toaster />
+        <SettingsView />
+      </div>
+    );
+  }
+
   // Full view (fallback, not used in current architecture)
   return (
     <div className="relative w-full h-screen pointer-events-none">
@@ -115,13 +165,7 @@ export default function App() {
         triggerZoneHeight={TRIGGER_TOP}
         expandedHeight={TOPNAV_HEIGHT}
       />
-      <Sidebar
-        position="left"
-        mode="auto-hide"
-        width={SIDEBAR_WIDTH}
-        hideDelay={300}
-        triggerZoneWidth={TRIGGER_LEFT}
-      />
+      <ConnectedSidebar />
     </div>
   );
 }

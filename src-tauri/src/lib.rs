@@ -1,10 +1,17 @@
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 use tauri::Emitter;
 use tauri::Manager;
 use tauri::WebviewUrl;
 use uuid::Uuid;
 
-// AppState removed - UI overlay is now always full screen
+mod settings;
+use settings::{SettingsDb, SidebarPosition, SidebarSettings};
+
+/// Application state for tracking sidebar position
+pub struct AppState {
+  pub sidebar_position: Mutex<SidebarPosition>,
+}
 
 /// Information about the current tab/page state
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -200,14 +207,128 @@ fn set_topnav_height(app_handle: tauri::AppHandle, height: f64) -> Result<(), St
 }
 
 /// Sets the sidebar width (for show/hide animation)
+/// Also updates position if sidebar is on the right side
 #[tauri::command]
-fn set_sidebar_width(app_handle: tauri::AppHandle, width: f64) -> Result<(), String> {
+fn set_sidebar_width(
+  app_handle: tauri::AppHandle,
+  state: tauri::State<'_, AppState>,
+  width: f64,
+) -> Result<(), String> {
   if let Some(webview) = app_handle.get_webview("sidebar") {
     if let Some(window) = app_handle.get_window("main") {
-      let size = window.inner_size().map_err(|e| e.to_string())?;
+      let window_size = window.inner_size().map_err(|e| e.to_string())?;
+      let scale_factor = window.scale_factor().unwrap_or(1.0);
+
+      // Convert logical width to physical width
+      let physical_width = (width * scale_factor).round() as u32;
+
+      // Set the new size using PhysicalSize
       webview
-        .set_size(tauri::LogicalSize::new(width, size.height as f64))
+        .set_size(tauri::PhysicalSize::new(physical_width, window_size.height))
         .map_err(|e| format!("Failed to set sidebar size: {}", e))?;
+
+      // If sidebar is on the right, update position to keep it at the right edge
+      let position = state.sidebar_position.lock().ok();
+      if let Some(pos) = position
+        && *pos == SidebarPosition::Right
+      {
+        let x_position = window_size.width.saturating_sub(physical_width);
+        webview
+          .set_position(tauri::PhysicalPosition::new(x_position, 0))
+          .map_err(|e| format!("Failed to set sidebar position: {}", e))?;
+      }
+    }
+    Ok(())
+  } else {
+    Err("Sidebar webview not found".to_string())
+  }
+}
+
+/// Sets the content WebView layout to avoid overlapping with fixed sidebar
+#[tauri::command]
+fn set_content_layout(
+  app_handle: tauri::AppHandle,
+  sidebar_width: f64,
+  sidebar_position: SidebarPosition,
+  is_fixed: bool,
+) -> Result<(), String> {
+  if let Some(content) = app_handle.get_webview("content") {
+    if let Some(window) = app_handle.get_window("main") {
+      let window_size = window.inner_size().map_err(|e| e.to_string())?;
+      let scale_factor = window.scale_factor().unwrap_or(1.0);
+
+      if is_fixed {
+        // Fixed mode: resize content to avoid sidebar
+        let physical_sidebar_width = (sidebar_width * scale_factor).round() as u32;
+        let content_width = window_size.width.saturating_sub(physical_sidebar_width);
+
+        let x_position = match sidebar_position {
+          SidebarPosition::Left => physical_sidebar_width,
+          SidebarPosition::Right => 0,
+        };
+
+        content
+          .set_position(tauri::PhysicalPosition::new(x_position, 0))
+          .map_err(|e| format!("Failed to set content position: {}", e))?;
+        content
+          .set_size(tauri::PhysicalSize::new(content_width, window_size.height))
+          .map_err(|e| format!("Failed to set content size: {}", e))?;
+      } else {
+        // Auto-hide mode: content takes full window
+        content
+          .set_position(tauri::PhysicalPosition::new(0, 0))
+          .map_err(|e| format!("Failed to set content position: {}", e))?;
+        content
+          .set_size(tauri::PhysicalSize::new(
+            window_size.width,
+            window_size.height,
+          ))
+          .map_err(|e| format!("Failed to set content size: {}", e))?;
+      }
+    }
+    Ok(())
+  } else {
+    Err("Content webview not found".to_string())
+  }
+}
+
+/// Sets the sidebar position (left or right) by repositioning the WebView
+#[tauri::command]
+fn set_sidebar_position(
+  app_handle: tauri::AppHandle,
+  state: tauri::State<'_, AppState>,
+  position: SidebarPosition,
+) -> Result<(), String> {
+  // Update the app state with the new position
+  {
+    let mut pos = state
+      .sidebar_position
+      .lock()
+      .map_err(|e| format!("Failed to lock state: {}", e))?;
+    *pos = position.clone();
+  }
+
+  if let Some(webview) = app_handle.get_webview("sidebar") {
+    if let Some(window) = app_handle.get_window("main") {
+      let window_size = window.inner_size().map_err(|e| e.to_string())?;
+      let webview_size = webview.size().map_err(|e| e.to_string())?;
+
+      let x_position = match position {
+        SidebarPosition::Left => 0,
+        SidebarPosition::Right => window_size.width.saturating_sub(webview_size.width),
+      };
+
+      webview
+        .set_position(tauri::PhysicalPosition::new(x_position, 0))
+        .map_err(|e| format!("Failed to set sidebar position: {}", e))?;
+
+      log::info!(
+        "Sidebar position set to {:?} at x={} (window={}, webview={})",
+        position,
+        x_position,
+        window_size.width,
+        webview_size.width
+      );
     }
     Ok(())
   } else {
@@ -253,6 +374,39 @@ fn hide_new_tab_dialog(app_handle: tauri::AppHandle) -> Result<(), String> {
   }
 }
 
+/// Shows the settings WebView
+#[tauri::command]
+fn show_settings(app_handle: tauri::AppHandle) -> Result<(), String> {
+  if let Some(webview) = app_handle.get_webview("settings") {
+    if let Some(window) = app_handle.get_window("main") {
+      let size = window.inner_size().map_err(|e| e.to_string())?;
+      webview
+        .set_position(tauri::LogicalPosition::new(0.0, 0.0))
+        .map_err(|e| format!("Failed to set settings position: {}", e))?;
+      webview
+        .set_size(tauri::PhysicalSize::new(size.width, size.height))
+        .map_err(|e| format!("Failed to show settings: {}", e))?;
+      let _ = webview.set_focus();
+    }
+    Ok(())
+  } else {
+    Err("Settings webview not found".to_string())
+  }
+}
+
+/// Hides the settings WebView
+#[tauri::command]
+fn hide_settings(app_handle: tauri::AppHandle) -> Result<(), String> {
+  if let Some(webview) = app_handle.get_webview("settings") {
+    webview
+      .set_size(tauri::LogicalSize::new(0.0, 0.0))
+      .map_err(|e| format!("Failed to hide settings: {}", e))?;
+    Ok(())
+  } else {
+    Err("Settings webview not found".to_string())
+  }
+}
+
 /// Event payload for new tab creation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewTabEvent {
@@ -283,6 +437,27 @@ fn navigate_to(app_handle: tauri::AppHandle, url: String) -> Result<(), String> 
   Ok(())
 }
 
+/// Retrieves sidebar settings from the database
+#[tauri::command]
+fn get_sidebar_settings(
+  state: tauri::State<'_, Arc<SettingsDb>>,
+) -> Result<SidebarSettings, String> {
+  Ok(settings::get_sidebar_settings(&state))
+}
+
+/// Saves sidebar settings to the database and notifies sidebar WebView
+#[tauri::command]
+fn save_sidebar_settings(
+  app_handle: tauri::AppHandle,
+  state: tauri::State<'_, Arc<SettingsDb>>,
+  settings_data: SidebarSettings,
+) -> Result<(), String> {
+  settings::save_sidebar_settings(&state, &settings_data)?;
+  // Notify sidebar WebView of settings change
+  let _ = app_handle.emit_to("sidebar", "settings_changed", &settings_data);
+  Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -299,10 +474,41 @@ pub fn run() {
       fetch_page_title,
       set_topnav_height,
       set_sidebar_width,
+      set_sidebar_position,
+      set_content_layout,
       show_new_tab_dialog,
-      hide_new_tab_dialog
+      hide_new_tab_dialog,
+      show_settings,
+      hide_settings,
+      get_sidebar_settings,
+      save_sidebar_settings
     ])
     .setup(|app| {
+      // Initialize settings database
+      let settings_db = match settings::init_database() {
+        Ok(db) => Arc::new(db),
+        Err(e) => {
+          log::error!("Failed to initialize settings database: {}", e);
+          // Create an in-memory database as fallback
+          let conn =
+            rusqlite::Connection::open_in_memory().expect("Failed to create in-memory database");
+          conn
+            .execute(
+              "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+              [],
+            )
+            .expect("Failed to create settings table");
+          Arc::new(SettingsDb::new(conn))
+        }
+      };
+
+      // Load initial sidebar settings and create app state
+      let initial_settings = settings::get_sidebar_settings(&settings_db);
+      let app_state = AppState {
+        sidebar_position: Mutex::new(initial_settings.position),
+      };
+      app.manage(app_state);
+      app.manage(settings_db);
       if cfg!(debug_assertions) {
         app.handle().plugin(
           tauri_plugin_log::Builder::default()
@@ -422,10 +628,23 @@ pub fn run() {
         tauri::Size::Physical(tauri::PhysicalSize::new(0, 0)),
       )?;
 
+      // Settings Webview (centered overlay for settings, starts hidden with 0x0 size)
+      let settings_webview = window.add_child(
+        tauri::webview::WebviewBuilder::new(
+          "settings",
+          tauri::WebviewUrl::App("index.html?view=settings".into()),
+        )
+        .transparent(true),
+        tauri::LogicalPosition::new(0, 0),
+        tauri::Size::Physical(tauri::PhysicalSize::new(0, 0)),
+      )?;
+
       // Handle window resize - update UI webview sizes
       let topnav_handle = topnav_webview.clone();
       let sidebar_handle = sidebar_webview.clone();
       let dialog_handle = dialog_webview.clone();
+      let settings_handle = settings_webview.clone();
+      let app_handle = app.handle().clone();
 
       window.on_window_event(move |event| {
         if let tauri::WindowEvent::Resized(size) = event {
@@ -436,21 +655,41 @@ pub fn run() {
               current_size.height,
             )));
           }
-          // Update sidebar height to match window height
+          // Update sidebar height and position based on current position setting
           if let Ok(current_size) = sidebar_handle.size() {
             let _ = sidebar_handle.set_size(tauri::Size::Physical(tauri::PhysicalSize::new(
               current_size.width,
               size.height,
             )));
+
+            // Update sidebar position if it's on the right side
+            if let Some(state) = app_handle.try_state::<AppState>()
+              && let Ok(position) = state.sidebar_position.lock()
+              && *position == SidebarPosition::Right
+            {
+              let x_position = size.width.saturating_sub(current_size.width);
+              let _ = sidebar_handle.set_position(tauri::PhysicalPosition::new(x_position, 0));
+            }
           }
           // Update dialog size if it's visible (non-zero size)
-          if let Ok(current_size) = dialog_handle.size() {
-            if current_size.width > 0 && current_size.height > 0 {
-              let _ = dialog_handle.set_size(tauri::Size::Physical(tauri::PhysicalSize::new(
-                size.width,
-                size.height,
-              )));
-            }
+          if let Ok(current_size) = dialog_handle.size()
+            && current_size.width > 0
+            && current_size.height > 0
+          {
+            let _ = dialog_handle.set_size(tauri::Size::Physical(tauri::PhysicalSize::new(
+              size.width,
+              size.height,
+            )));
+          }
+          // Update settings size if it's visible (non-zero size)
+          if let Ok(current_size) = settings_handle.size()
+            && current_size.width > 0
+            && current_size.height > 0
+          {
+            let _ = settings_handle.set_size(tauri::Size::Physical(tauri::PhysicalSize::new(
+              size.width,
+              size.height,
+            )));
           }
         }
       });
