@@ -18,10 +18,10 @@
     "lint:front": "bunx --bun oxlint",
     "lint:front:fix": "bunx --bun oxlint --fix",
     "check:front": "bun format:front && bun lint:front && tsc --noEmit && bun test",
-    "check:front:fix": "bun format:front && bun lint:front:fix && tsc --noEmit",
+    "check:front:fix": "bun format:front && bun lint:front:fix && tsc --noEmit && bun test",
     "format:back": "cd src-tauri && cargo fmt && cd ..",
     "lint:back": "cd src-tauri && cargo clippy && cd ..",
-    "check:back": "bun format:back && bun lint:back",
+    "check:back": "bun format:back && bun lint:back && cd src-tauri && cargo test && cd ..",
     "format": "bun format:front && bun format:back",
     "lint": "bun lint:front && bun lint:back",
     "check": "bun check:front && bun check:back"

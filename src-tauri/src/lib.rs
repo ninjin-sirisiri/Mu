@@ -138,11 +138,69 @@ fn fetch_page_title(app_handle: tauri::AppHandle) {
 }
 
 /// Normalizes a URL by adding https:// prefix if needed
-fn normalize_url(url: &str) -> String {
+pub fn normalize_url(url: &str) -> String {
   if url.starts_with("http://") || url.starts_with("https://") {
     url.to_string()
   } else {
     format!("https://{}", url)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_normalize_url_with_https() {
+    assert_eq!(normalize_url("https://example.com"), "https://example.com");
+  }
+
+  #[test]
+  fn test_normalize_url_with_http() {
+    assert_eq!(normalize_url("http://example.com"), "http://example.com");
+  }
+
+  #[test]
+  fn test_normalize_url_without_protocol() {
+    assert_eq!(normalize_url("example.com"), "https://example.com");
+  }
+
+  #[test]
+  fn test_normalize_url_with_path() {
+    assert_eq!(
+      normalize_url("example.com/path/to/page"),
+      "https://example.com/path/to/page"
+    );
+  }
+
+  #[test]
+  fn test_normalize_url_with_query_params() {
+    assert_eq!(
+      normalize_url("example.com?q=test"),
+      "https://example.com?q=test"
+    );
+  }
+
+  #[test]
+  fn test_create_tab_returns_valid_uuid() {
+    let tab_id = create_tab();
+    // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+    assert_eq!(tab_id.len(), 36);
+    assert!(uuid::Uuid::parse_str(&tab_id).is_ok());
+  }
+
+  #[test]
+  fn test_create_tab_returns_unique_ids() {
+    let id1 = create_tab();
+    let id2 = create_tab();
+    assert_ne!(id1, id2);
+  }
+
+  #[test]
+  fn test_close_tab_always_succeeds() {
+    // close_tab is a placeholder that always returns Ok
+    let result = close_tab("any-id".to_string());
+    assert!(result.is_ok());
   }
 }
 
