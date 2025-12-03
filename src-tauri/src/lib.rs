@@ -183,26 +183,35 @@ fn reload(app_handle: tauri::AppHandle) {
   }
 }
 
-/// Sets the content webview position and size to accommodate UI elements
-/// This allows the content to be visible while UI overlays are shown
+/// Sets the top navigation bar height (for show/hide animation)
 #[tauri::command]
-fn set_content_bounds(
-  app_handle: tauri::AppHandle,
-  x: f64,
-  y: f64,
-  width: f64,
-  height: f64,
-) -> Result<(), String> {
-  if let Some(webview) = app_handle.get_webview("content") {
-    webview
-      .set_position(tauri::LogicalPosition::new(x, y))
-      .map_err(|e| format!("Failed to set position: {}", e))?;
-    webview
-      .set_size(tauri::LogicalSize::new(width, height))
-      .map_err(|e| format!("Failed to set size: {}", e))?;
+fn set_topnav_height(app_handle: tauri::AppHandle, height: f64) -> Result<(), String> {
+  if let Some(webview) = app_handle.get_webview("topnav") {
+    if let Some(window) = app_handle.get_window("main") {
+      let size = window.inner_size().map_err(|e| e.to_string())?;
+      webview
+        .set_size(tauri::LogicalSize::new(size.width as f64, height))
+        .map_err(|e| format!("Failed to set topnav size: {}", e))?;
+    }
     Ok(())
   } else {
-    Err("Content webview not found".to_string())
+    Err("Topnav webview not found".to_string())
+  }
+}
+
+/// Sets the sidebar width (for show/hide animation)
+#[tauri::command]
+fn set_sidebar_width(app_handle: tauri::AppHandle, width: f64) -> Result<(), String> {
+  if let Some(webview) = app_handle.get_webview("sidebar") {
+    if let Some(window) = app_handle.get_window("main") {
+      let size = window.inner_size().map_err(|e| e.to_string())?;
+      webview
+        .set_size(tauri::LogicalSize::new(width, size.height as f64))
+        .map_err(|e| format!("Failed to set sidebar size: {}", e))?;
+    }
+    Ok(())
+  } else {
+    Err("Sidebar webview not found".to_string())
   }
 }
 
@@ -218,8 +227,9 @@ pub fn run() {
       switch_tab,
       close_tab,
       get_tab_info,
-      set_content_bounds,
-      fetch_page_title
+      fetch_page_title,
+      set_topnav_height,
+      set_sidebar_width
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -242,24 +252,17 @@ pub fn run() {
 
       let size = window.inner_size()?;
 
-      // Trigger zone sizes
-      let trigger_left: u32 = 16; // Left sidebar trigger
-      let trigger_top: u32 = 8; // Top nav trigger
+      // UI dimensions
+      let topnav_trigger_height: u32 = 8; // Trigger zone height for top nav
+      let sidebar_trigger_width: u32 = 16; // Trigger zone width for sidebar
 
-      // App Webview (UI - added first, will be at bottom layer)
-      let _app_webview = window.add_child(
-        tauri::webview::WebviewBuilder::new("app", tauri::WebviewUrl::App("index.html".into()))
-          .auto_resize(),
-        tauri::LogicalPosition::new(0, 0),
-        tauri::Size::Physical(size),
-      )?;
-
-      // Content Webview (Web content - added second, on top but offset for trigger zones)
-      let content_webview = window.add_child(
+      // Content Webview (Web content - full screen, at bottom layer)
+      let _content_webview = window.add_child(
         tauri::webview::WebviewBuilder::new(
           "content",
           WebviewUrl::External("https://google.com".parse().unwrap()),
         )
+        .auto_resize()
         .on_page_load(|webview, payload| {
           use tauri::webview::PageLoadEvent as TauriPageLoadEvent;
 
@@ -271,9 +274,12 @@ pub fn run() {
                 url: url.clone(),
                 is_loading: true,
               };
-              let _ = webview.emit_to("app", "page_load_started", event);
+              // Emit to both topnav and sidebar
+              let _ = webview.emit_to("topnav", "page_load_started", event.clone());
+              let _ = webview.emit_to("sidebar", "page_load_started", event);
               let nav_event = NavigationEvent { url };
-              let _ = webview.emit_to("app", "navigation", nav_event);
+              let _ = webview.emit_to("topnav", "navigation", nav_event.clone());
+              let _ = webview.emit_to("sidebar", "navigation", nav_event);
             }
             TauriPageLoadEvent::Finished => {
               let finished_url = url.clone();
@@ -281,7 +287,8 @@ pub fn run() {
                 url: url.clone(),
                 is_loading: false,
               };
-              let _ = webview.emit_to("app", "page_load_finished", event);
+              let _ = webview.emit_to("topnav", "page_load_finished", event.clone());
+              let _ = webview.emit_to("sidebar", "page_load_finished", event);
 
               // Extract favicon URL using Google's favicon service
               let favicon_url = finished_url.parse::<tauri::Url>().ok().and_then(|parsed| {
@@ -302,30 +309,57 @@ pub fn run() {
                 title,
                 favicon: favicon_url,
               };
-              let _ = webview.emit_to("app", "page_info", page_info);
+              let _ = webview.emit_to("topnav", "page_info", page_info.clone());
+              let _ = webview.emit_to("sidebar", "page_info", page_info);
             }
           }
         }),
-        tauri::LogicalPosition::new(trigger_left as f64, trigger_top as f64),
-        tauri::Size::Physical(tauri::PhysicalSize::new(
-          size.width.saturating_sub(trigger_left),
-          size.height.saturating_sub(trigger_top),
-        )),
+        tauri::LogicalPosition::new(0, 0),
+        tauri::Size::Physical(size),
       )?;
 
-      let content_webview_handle = content_webview.clone();
+      // Top Navigation Webview (overlay at top, starts with trigger zone height)
+      let topnav_webview = window.add_child(
+        tauri::webview::WebviewBuilder::new(
+          "topnav",
+          tauri::WebviewUrl::App("index.html?view=topnav".into()),
+        )
+        .transparent(true),
+        tauri::LogicalPosition::new(0, 0),
+        tauri::Size::Physical(tauri::PhysicalSize::new(size.width, topnav_trigger_height)),
+      )?;
+
+      // Sidebar Webview (overlay at left, starts with trigger zone width)
+      let sidebar_webview = window.add_child(
+        tauri::webview::WebviewBuilder::new(
+          "sidebar",
+          tauri::WebviewUrl::App("index.html?view=sidebar".into()),
+        )
+        .transparent(true),
+        tauri::LogicalPosition::new(0, 0),
+        tauri::Size::Physical(tauri::PhysicalSize::new(sidebar_trigger_width, size.height)),
+      )?;
+
+      // Handle window resize - update UI webview sizes
+      let topnav_handle = topnav_webview.clone();
+      let sidebar_handle = sidebar_webview.clone();
 
       window.on_window_event(move |event| {
         if let tauri::WindowEvent::Resized(size) = event {
-          // Content webview is offset by trigger zones
-          let _ = content_webview_handle.set_position(tauri::LogicalPosition::new(
-            trigger_left as f64,
-            trigger_top as f64,
-          ));
-          let _ = content_webview_handle.set_size(tauri::Size::Physical(tauri::PhysicalSize::new(
-            size.width.saturating_sub(trigger_left),
-            size.height.saturating_sub(trigger_top),
-          )));
+          // Update topnav width to match window width
+          if let Ok(current_size) = topnav_handle.size() {
+            let _ = topnav_handle.set_size(tauri::Size::Physical(tauri::PhysicalSize::new(
+              size.width,
+              current_size.height,
+            )));
+          }
+          // Update sidebar height to match window height
+          if let Ok(current_size) = sidebar_handle.size() {
+            let _ = sidebar_handle.set_size(tauri::Size::Physical(tauri::PhysicalSize::new(
+              current_size.width,
+              size.height,
+            )));
+          }
         }
       });
 

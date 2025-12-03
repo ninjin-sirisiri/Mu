@@ -1,5 +1,6 @@
 import { PanelLeft } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { ConnectedTabList } from './TabList';
 
 export type SidebarPosition = 'left' | 'right';
@@ -19,6 +20,7 @@ export type SidebarProps = {
 
 /**
  * Sidebar component with auto-hide functionality
+ * Controls its own WebView width via Tauri commands
  * Requirements: 8.1, 8.2, 8.4
  */
 export function Sidebar({
@@ -34,7 +36,18 @@ export function Sidebar({
 }: SidebarProps) {
   const [isVisible, setIsVisible] = useState(mode === 'fixed');
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  // Update WebView width when visibility changes
+  useEffect(() => {
+    (async function updateWidth() {
+      const targetWidth = isVisible ? width : triggerZoneWidth;
+      try {
+        await invoke('set_sidebar_width', { width: targetWidth });
+      } catch {
+        // Ignore errors (e.g., when running in browser)
+      }
+    })();
+  }, [isVisible, width, triggerZoneWidth]);
 
   // Clear any pending hide timeout
   const clearHideTimeout = useCallback(() => {
@@ -62,20 +75,16 @@ export function Sidebar({
     }, hideDelay);
   }, [mode, hideDelay, clearHideTimeout, onVisibilityChange]);
 
-  // Handle mouse entering trigger zone
-  const handleTriggerZoneEnter = useCallback(() => {
+  // Handle mouse entering
+  const handleMouseEnter = useCallback(() => {
     if (mode === 'auto-hide') {
       showSidebar();
     }
-  }, [mode, showSidebar]);
-
-  // Handle mouse entering sidebar
-  const handleSidebarEnter = useCallback(() => {
     clearHideTimeout();
-  }, [clearHideTimeout]);
+  }, [mode, showSidebar, clearHideTimeout]);
 
-  // Handle mouse leaving sidebar
-  const handleSidebarLeave = useCallback(() => {
+  // Handle mouse leaving
+  const handleMouseLeave = useCallback(() => {
     if (mode === 'auto-hide') {
       hideSidebarWithDelay();
     }
@@ -97,21 +106,6 @@ export function Sidebar({
     [clearHideTimeout]
   );
 
-  // Position styles
-  const positionStyles = position === 'left' ? { left: 0 } : { right: 0 };
-
-  const triggerZoneStyles = position === 'left' ? { left: 0 } : { right: 0 };
-
-  // Calculate slide transform based on position and visibility
-  function getSlideTransform(): string {
-    if (!isVisible) {
-      return position === 'left' ? 'translateX(-100%)' : 'translateX(100%)';
-    }
-    return 'translateX(0)';
-  }
-
-  const slideTransform = getSlideTransform();
-
   // Shadow direction based on position
   const shadowClass =
     position === 'left'
@@ -119,33 +113,36 @@ export function Sidebar({
       : 'shadow-[-4px_0_24px_-4px_rgba(0,0,0,0.5)]';
 
   return (
-    <>
-      {/* Trigger Zone - only shown in auto-hide mode when sidebar is hidden */}
-      {mode === 'auto-hide' && !isVisible && (
+    <div
+      className="w-full h-full relative"
+      onMouseEnter={() => {
+        onMouseEnterProp?.();
+        handleMouseEnter();
+      }}
+      onMouseLeave={() => {
+        onMouseLeaveProp?.();
+        handleMouseLeave();
+      }}>
+      {/* Trigger zone for auto-hide mode */}
+      {mode === 'auto-hide' && (
         <div
           data-testid="sidebar-trigger-zone"
-          className="fixed top-0 h-full z-40 pointer-events-auto bg-gradient-to-r from-gray-900/10 to-transparent hover:from-gray-900/20"
+          className="absolute top-0 h-full z-10"
           style={{
-            ...triggerZoneStyles,
-            width: triggerZoneWidth
+            width: triggerZoneWidth,
+            [position]: 0
           }}
-          onMouseEnter={() => {
-            onMouseEnterProp?.();
-            handleTriggerZoneEnter();
-          }}
-          onMouseLeave={onMouseLeaveProp}
+          onMouseEnter={handleMouseEnter}
         />
       )}
-
-      {/* Sidebar */}
+      {/* Sidebar - slides in from left */}
       <div
-        ref={sidebarRef}
         data-testid="sidebar"
         data-visible={isVisible}
         data-position={position}
         data-mode={mode}
         className={`
-          fixed top-0 h-full z-50
+          h-full
           bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950
           border-gray-700/50 backdrop-blur-sm
           transition-transform duration-300 ease-out
@@ -153,18 +150,8 @@ export function Sidebar({
           ${isVisible ? shadowClass : ''}
         `}
         style={{
-          ...positionStyles,
           width,
-          transform: slideTransform,
-          pointerEvents: isVisible ? 'auto' : 'none'
-        }}
-        onMouseEnter={() => {
-          onMouseEnterProp?.();
-          handleSidebarEnter();
-        }}
-        onMouseLeave={() => {
-          onMouseLeaveProp?.();
-          handleSidebarLeave();
+          transform: isVisible ? 'translateX(0)' : 'translateX(-100%)'
         }}>
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -182,7 +169,7 @@ export function Sidebar({
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

@@ -5,12 +5,12 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #111827;
+  background: transparent;
   overflow: hidden;
 }
 
 html {
-  background: #111827;
+  background: transparent;
 }
 
 #root {

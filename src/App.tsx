@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useStoreValue } from '@simplestack/store/react';
 import { invoke } from '@tauri-apps/api/core';
@@ -13,52 +13,28 @@ const TRIGGER_LEFT = 16;
 const TRIGGER_TOP = 8;
 const SIDEBAR_WIDTH = 280;
 const TOPNAV_HEIGHT = 56;
-const ANIMATION_DURATION = 300;
 
-// Easing function for smooth animation
-function easeOutCubic(t: number): number {
-  return 1 - (1 - t) ** 3;
-}
-
-// Animate content bounds change
-function animateContentBounds(
-  fromX: number,
-  fromY: number,
-  toX: number,
-  toY: number,
-  onUpdate: (x: number, y: number) => void
-) {
-  const startTime = performance.now();
-  const duration = ANIMATION_DURATION;
-
-  function animate() {
-    const elapsed = performance.now() - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = easeOutCubic(progress);
-
-    const currentX = fromX + (toX - fromX) * eased;
-    const currentY = fromY + (toY - fromY) * eased;
-
-    onUpdate(currentX, currentY);
-
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    }
-  }
-
-  requestAnimationFrame(animate);
+// Get view type from URL parameter
+function getViewType(): 'topnav' | 'sidebar' | 'full' {
+  const params = new URLSearchParams(globalThis.location.search);
+  const view = params.get('view');
+  if (view === 'topnav') return 'topnav';
+  if (view === 'sidebar') return 'sidebar';
+  return 'full';
 }
 
 /**
  * Main App component with integrated tab system
  *
- * The app uses a sidebar-based tab management system that replaces
- * the previous top header navigation. The sidebar can be configured
- * to auto-hide or remain fixed.
+ * The app uses separate WebViews for top navigation and sidebar.
+ * Each WebView only covers its own area, allowing the content WebView
+ * to receive mouse events in uncovered areas.
  *
  * Requirements: 2.1, 8.1, 8.2
  */
 export default function App() {
+  const viewType = getViewType();
+
   // Set up WebView event listeners to update tab state
   // Requirements: 5.1, 5.2, 5.3, 5.5
   useWebViewEvents();
@@ -67,9 +43,11 @@ export default function App() {
   const tabState = useStoreValue(tabStore);
   const activeTabId = tabState?.activeTabId ?? null;
 
-  // Navigate WebView when active tab changes
+  // Navigate WebView when active tab changes (only in sidebar view which manages tabs)
   // Requirements: 2.1 - Clicking a tab displays its content
   useEffect(() => {
+    if (viewType !== 'sidebar') return;
+
     async function navigateToActiveTab() {
       const activeTab = getActiveTab();
       if (!activeTab) return;
@@ -86,77 +64,52 @@ export default function App() {
     }
 
     navigateToActiveTab();
-  }, [activeTabId]);
+  }, [activeTabId, viewType]);
 
-  // Track UI visibility state
-  const [sidebarVisible, setSidebarVisible] = useState(false);
-  const [topNavVisible, setTopNavVisible] = useState(false);
+  // Render only the requested view
+  if (viewType === 'topnav') {
+    return (
+      <div className="relative w-full h-screen">
+        <Toaster />
+        <TopNavBar
+          hideDelay={300}
+          triggerZoneHeight={TRIGGER_TOP}
+          expandedHeight={TOPNAV_HEIGHT}
+        />
+      </div>
+    );
+  }
 
-  // Track current bounds for animation
-  const currentBoundsRef = useRef({ x: TRIGGER_LEFT, y: TRIGGER_TOP });
+  if (viewType === 'sidebar') {
+    return (
+      <div className="relative w-full h-screen">
+        <Toaster />
+        <Sidebar
+          position="left"
+          mode="auto-hide"
+          width={SIDEBAR_WIDTH}
+          hideDelay={300}
+          triggerZoneWidth={TRIGGER_LEFT}
+        />
+      </div>
+    );
+  }
 
-  // Update content WebView bounds with animation when UI visibility changes
-  useEffect(() => {
-    const targetX = sidebarVisible ? SIDEBAR_WIDTH : TRIGGER_LEFT;
-    // Always keep TRIGGER_TOP space for the trigger zone when nav is hidden
-    const targetY = topNavVisible ? TOPNAV_HEIGHT : TRIGGER_TOP;
-    const fromX = currentBoundsRef.current.x;
-    const fromY = currentBoundsRef.current.y;
-
-    // Skip animation if no change
-    if (fromX === targetX && fromY === targetY) return;
-
-    animateContentBounds(fromX, fromY, targetX, targetY, (x, y) => {
-      currentBoundsRef.current = { x, y };
-      const width = window.innerWidth - x;
-      const height = window.innerHeight - y;
-      invoke('set_content_bounds', { x, y, width, height });
-    });
-  }, [sidebarVisible, topNavVisible]);
-
-  // Also update on window resize
-  useEffect(() => {
-    function handleResize() {
-      const x = sidebarVisible ? SIDEBAR_WIDTH : TRIGGER_LEFT;
-      // Always keep TRIGGER_TOP space for the trigger zone when nav is hidden
-      const y = topNavVisible ? TOPNAV_HEIGHT : TRIGGER_TOP;
-      const width = window.innerWidth - x;
-      const height = window.innerHeight - y;
-      invoke('set_content_bounds', { x, y, width, height });
-    }
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [sidebarVisible, topNavVisible]);
-
-  const handleSidebarVisibilityChange = useCallback((visible: boolean) => {
-    setSidebarVisible(visible);
-  }, []);
-
-  const handleTopNavVisibilityChange = useCallback((visible: boolean) => {
-    setTopNavVisible(visible);
-  }, []);
-
+  // Full view (fallback, not used in current architecture)
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-screen pointer-events-none">
       <Toaster />
-
-      {/* Top navigation bar - auto-hide mode */}
       <TopNavBar
         hideDelay={300}
         triggerZoneHeight={TRIGGER_TOP}
-        onVisibilityChange={handleTopNavVisibilityChange}
+        expandedHeight={TOPNAV_HEIGHT}
       />
-
-      {/* Sidebar with tab list - auto-hide mode by default */}
-      {/* Requirements: 8.1, 8.2, 8.4 */}
       <Sidebar
         position="left"
         mode="auto-hide"
         width={SIDEBAR_WIDTH}
         hideDelay={300}
         triggerZoneWidth={TRIGGER_LEFT}
-        onVisibilityChange={handleSidebarVisibilityChange}
       />
     </div>
   );
