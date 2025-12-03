@@ -28,6 +28,7 @@ mod tests {
   }
 
   /// Generate a URL with the given domain
+  #[allow(dead_code)]
   fn url_with_domain(domain: String) -> impl Strategy<Value = String> {
     let d = domain.clone();
     prop::option::of("[a-z0-9/]{1,20}").prop_map(move |path| match path {
@@ -47,6 +48,7 @@ mod tests {
   }
 
   /// Generate a filter list with multiple rules
+  #[allow(dead_code)]
   fn filter_list_strategy() -> impl Strategy<Value = String> {
     prop::collection::vec(filter_line_strategy(), 1..=20).prop_map(|lines| lines.join("\n"))
   }
