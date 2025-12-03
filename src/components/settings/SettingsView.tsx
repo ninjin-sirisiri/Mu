@@ -1,10 +1,9 @@
-import { X, PanelLeft, PanelRight, Pin, EyeOff } from 'lucide-react';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { X } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { invoke } from '@tauri-apps/api/core';
-
-type SidebarPosition = 'left' | 'right';
-type SidebarMode = 'fixed' | 'auto-hide';
+import { type SidebarPosition, type SidebarMode } from '../../store/settingsStore';
+import { PositionToggleGroup, ModeToggleGroup } from './ToggleGroups';
 
 type SidebarSettings = {
   position: SidebarPosition;
@@ -116,110 +115,31 @@ export function SettingsView() {
           {/* Content */}
           <div className="p-5 space-y-6">
             {/* Position Setting */}
-            <PositionSetting
-              position={position}
-              onPositionChange={handlePositionChange}
-            />
+            <fieldset className="space-y-3">
+              <legend className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                Sidebar Position
+              </legend>
+              <PositionToggleGroup
+                position={position}
+                onPositionChange={handlePositionChange}
+                variant="large"
+              />
+            </fieldset>
 
             {/* Mode Setting */}
-            <ModeSetting
-              mode={mode}
-              onModeChange={handleModeChange}
-            />
+            <fieldset className="space-y-3">
+              <legend className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                Display Mode
+              </legend>
+              <ModeToggleGroup
+                mode={mode}
+                onModeChange={handleModeChange}
+                variant="large"
+              />
+            </fieldset>
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-type ToggleButtonProps = {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-};
-
-function ToggleButton({ active, onClick, icon, label }: ToggleButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`
-        flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl
-        text-sm font-medium transition-all duration-150
-        ${
-          active
-            ? 'bg-blue-600 text-white ring-1 ring-blue-500'
-            : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300'
-        }
-      `}
-      aria-pressed={active}>
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
-
-type PositionSettingProps = {
-  position: SidebarPosition;
-  onPositionChange: (position: SidebarPosition) => void;
-};
-
-function PositionSetting({ position, onPositionChange }: PositionSettingProps) {
-  const leftIcon = useMemo(() => <PanelLeft className="w-4 h-4" />, []);
-  const rightIcon = useMemo(() => <PanelRight className="w-4 h-4" />, []);
-
-  return (
-    <fieldset className="space-y-3">
-      <legend className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-        Sidebar Position
-      </legend>
-      <div className="flex gap-3">
-        <ToggleButton
-          active={position === 'left'}
-          onClick={() => onPositionChange('left')}
-          icon={leftIcon}
-          label="Left"
-        />
-        <ToggleButton
-          active={position === 'right'}
-          onClick={() => onPositionChange('right')}
-          icon={rightIcon}
-          label="Right"
-        />
-      </div>
-    </fieldset>
-  );
-}
-
-type ModeSettingProps = {
-  mode: SidebarMode;
-  onModeChange: (mode: SidebarMode) => void;
-};
-
-function ModeSetting({ mode, onModeChange }: ModeSettingProps) {
-  const fixedIcon = useMemo(() => <Pin className="w-4 h-4" />, []);
-  const autoHideIcon = useMemo(() => <EyeOff className="w-4 h-4" />, []);
-
-  return (
-    <fieldset className="space-y-3">
-      <legend className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-        Display Mode
-      </legend>
-      <div className="flex gap-3">
-        <ToggleButton
-          active={mode === 'fixed'}
-          onClick={() => onModeChange('fixed')}
-          icon={fixedIcon}
-          label="Fixed"
-        />
-        <ToggleButton
-          active={mode === 'auto-hide'}
-          onClick={() => onModeChange('auto-hide')}
-          icon={autoHideIcon}
-          label="Auto-hide"
-        />
-      </div>
-    </fieldset>
   );
 }

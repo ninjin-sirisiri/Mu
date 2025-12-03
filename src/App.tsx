@@ -2,10 +2,10 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useStoreValue } from '@simplestack/store/react';
 import { invoke } from '@tauri-apps/api/core';
-import { NewTabModal } from './components/NewTabModal';
-import { SettingsView } from './components/SettingsView';
-import { ConnectedSidebar } from './components/Sidebar';
-import { TopNavBar } from './components/TopNavBar';
+import { NewTabModal } from './components/dialog';
+import { TopNavBar } from './components/navigation';
+import { SettingsView } from './components/settings';
+import { ConnectedSidebar } from './components/sidebar';
 import { Toaster } from './components/ui/sonner';
 import { useWebViewEvents } from './hooks/useWebViewEvents';
 import './index.css';
@@ -87,7 +87,6 @@ export default function App() {
       if (!activeTab) return;
 
       // Only navigate if the tab has a valid URL (not about:blank for new tabs)
-      // The WebView will update the tab's URL via events when navigation completes
       if (activeTab.url && activeTab.url !== 'about:blank') {
         try {
           await invoke('switch_tab', { url: activeTab.url });

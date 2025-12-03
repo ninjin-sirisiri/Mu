@@ -119,7 +119,6 @@ export function NewTabModal() {
 
       const url = toUrl(trimmed);
 
-      // Navigate to the URL (this creates a new tab via event and hides the dialog)
       try {
         await invoke('navigate_to', { url });
       } catch (error) {

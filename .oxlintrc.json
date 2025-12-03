@@ -104,6 +104,7 @@
     "init-declarations": "off",
     "max-depth": "off",
     "no-continue": "off",
-    "new-cap": "off"
+    "new-cap": "off",
+    "oxc/no-barrel-file": "off"
   }
 }

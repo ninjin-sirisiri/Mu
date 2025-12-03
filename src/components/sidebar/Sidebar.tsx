@@ -1,16 +1,8 @@
 import { PanelLeft, Settings } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
-import { useStoreValue } from '@simplestack/store/react';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  settingsStore,
-  openSettingsPanel,
-  closeSettingsPanel,
-  setSidebarPosition,
-  setSidebarMode
-} from '../store/settingsStore';
-import { SettingsPanel } from './SettingsPanel';
-import { ConnectedTabList } from './TabList';
+import { openSettingsPanel } from '../../store/settingsStore';
+import { ConnectedTabList } from '../tabs';
 
 export type SidebarPosition = 'left' | 'right';
 export type SidebarMode = 'fixed' | 'auto-hide';
@@ -107,8 +99,6 @@ export function Sidebar({
       setIsVisible(true);
       clearHideTimeout();
     }
-    // Note: Don't set isVisible to false for auto-hide mode here,
-    // as it should remain visible until mouse leaves
 
     // Update content WebView layout
     (async function updateContentLayout() {
@@ -150,7 +140,6 @@ export function Sidebar({
       : 'shadow-[-4px_0_24px_-4px_rgba(0,0,0,0.5)]';
 
   // Transform direction based on position and visibility
-  // Requirements: 1.1, 1.2, 5.1, 5.3
   const hiddenTransform = position === 'left' ? 'translateX(-100%)' : 'translateX(100%)';
   const sidebarTransform = isVisible ? 'translateX(0)' : hiddenTransform;
 
@@ -222,7 +211,7 @@ export function Sidebar({
                 <ConnectedTabList />
               </div>
 
-              {/* Footer with subtle branding and settings button (only shown when no children) */}
+              {/* Footer with subtle branding and settings button */}
               <div className="px-4 py-2 border-t border-gray-700/30 bg-gray-950/50 flex items-center justify-between">
                 <span className="text-xs text-gray-600">Mu Browser</span>
                 <button
@@ -251,99 +240,13 @@ export function computeSidebarVisibility(
   cursorInSidebar: boolean,
   _currentlyVisible: boolean
 ): boolean {
-  // Fixed mode: always visible
   if (mode === 'fixed') {
     return true;
   }
 
-  // Auto-hide mode
   if (cursorInTriggerZone || cursorInSidebar) {
     return true;
   }
 
-  // If cursor left both zones, visibility depends on delay
-  // (actual hiding happens after delay, but this returns the target state)
   return false;
-}
-
-/**
- * Connected Sidebar component that reads settings from the store
- * Requirements: 4.3
- */
-export function ConnectedSidebar() {
-  const settingsState = useStoreValue(settingsStore);
-  const position = settingsState?.sidebar?.position ?? 'left';
-  const mode = settingsState?.sidebar?.mode ?? 'auto-hide';
-  const isSettingsPanelOpen = settingsState?.isSettingsPanelOpen ?? false;
-
-  return (
-    <ConnectedSidebarInner
-      position={position}
-      mode={mode}
-      isSettingsPanelOpen={isSettingsPanelOpen}
-    />
-  );
-}
-
-type ConnectedSidebarInnerProps = {
-  position: SidebarPosition;
-  mode: SidebarMode;
-  isSettingsPanelOpen: boolean;
-};
-
-/**
- * Inner component to handle settings panel integration
- * Requirements: 4.1, 4.4
- */
-function ConnectedSidebarInner({
-  position,
-  mode,
-  isSettingsPanelOpen
-}: ConnectedSidebarInnerProps) {
-  const handleOpenSettings = useCallback(async () => {
-    try {
-      await invoke('show_settings');
-    } catch {
-      // Fallback to inline panel if WebView fails
-      openSettingsPanel();
-    }
-  }, []);
-
-  const handleCloseSettings = useCallback(() => {
-    closeSettingsPanel();
-  }, []);
-
-  const handlePositionChange = useCallback((newPosition: SidebarPosition) => {
-    setSidebarPosition(newPosition);
-  }, []);
-
-  const handleModeChange = useCallback((newMode: SidebarMode) => {
-    setSidebarMode(newMode);
-  }, []);
-
-  return (
-    <Sidebar
-      position={position}
-      mode={mode}
-      onSettingsClick={handleOpenSettings}>
-      <>
-        {/* Tab List */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <ConnectedTabList />
-        </div>
-
-        {/* Settings Panel */}
-        <div className="flex-shrink-0">
-          <SettingsPanel
-            isOpen={isSettingsPanelOpen}
-            onClose={handleCloseSettings}
-            position={position}
-            mode={mode}
-            onPositionChange={handlePositionChange}
-            onModeChange={handleModeChange}
-          />
-        </div>
-      </>
-    </Sidebar>
-  );
 }

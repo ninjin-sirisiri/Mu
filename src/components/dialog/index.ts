@@ -1,0 +1,1 @@
+export { NewTabModal } from './NewTabModal';

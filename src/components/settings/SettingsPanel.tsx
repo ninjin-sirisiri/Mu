@@ -1,6 +1,7 @@
-import { Settings, X, PanelLeft, PanelRight, Pin, EyeOff } from 'lucide-react';
-import { useEffect, useRef, useMemo } from 'react';
-import { type SidebarPosition, type SidebarMode } from '../store/settingsStore';
+import { Settings, X } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { type SidebarPosition, type SidebarMode } from '../../store/settingsStore';
+import { PositionToggleGroup, ModeToggleGroup } from './ToggleGroups';
 
 export type SettingsPanelProps = {
   isOpen: boolean;
@@ -93,86 +94,5 @@ export function SettingsPanel({
         </fieldset>
       </div>
     </div>
-  );
-}
-
-type PositionToggleGroupProps = {
-  position: SidebarPosition;
-  onPositionChange: (position: SidebarPosition) => void;
-};
-
-function PositionToggleGroup({ position, onPositionChange }: PositionToggleGroupProps) {
-  const leftIcon = useMemo(() => <PanelLeft className="w-4 h-4" />, []);
-  const rightIcon = useMemo(() => <PanelRight className="w-4 h-4" />, []);
-
-  return (
-    <div className="flex gap-2">
-      <ToggleButton
-        active={position === 'left'}
-        onClick={() => onPositionChange('left')}
-        icon={leftIcon}
-        label="Left"
-      />
-      <ToggleButton
-        active={position === 'right'}
-        onClick={() => onPositionChange('right')}
-        icon={rightIcon}
-        label="Right"
-      />
-    </div>
-  );
-}
-
-type ModeToggleGroupProps = {
-  mode: SidebarMode;
-  onModeChange: (mode: SidebarMode) => void;
-};
-
-function ModeToggleGroup({ mode, onModeChange }: ModeToggleGroupProps) {
-  const fixedIcon = useMemo(() => <Pin className="w-4 h-4" />, []);
-  const autoHideIcon = useMemo(() => <EyeOff className="w-4 h-4" />, []);
-
-  return (
-    <div className="flex gap-2">
-      <ToggleButton
-        active={mode === 'fixed'}
-        onClick={() => onModeChange('fixed')}
-        icon={fixedIcon}
-        label="Fixed"
-      />
-      <ToggleButton
-        active={mode === 'auto-hide'}
-        onClick={() => onModeChange('auto-hide')}
-        icon={autoHideIcon}
-        label="Auto-hide"
-      />
-    </div>
-  );
-}
-
-type ToggleButtonProps = {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-};
-
-function ToggleButton({ active, onClick, icon, label }: ToggleButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`
-        flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md
-        text-sm font-medium transition-all duration-150
-        ${
-          active
-            ? 'bg-gray-600 text-gray-100 ring-1 ring-gray-500'
-            : 'bg-gray-700/50 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
-        }
-      `}
-      aria-pressed={active}>
-      {icon}
-      <span>{label}</span>
-    </button>
   );
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import * as fc from 'fast-check';
 import { render, screen, cleanup } from '@testing-library/react';
-import type { Tab } from '../store/tabStore';
+import type { Tab } from '../../store/tabStore';
 import { TabItem, truncateTitle, MAX_TITLE_LENGTH } from './TabItem';
 
 // Clean up after each test

@@ -1,8 +1,8 @@
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useStoreValue } from '@simplestack/store/react';
-import { tabStore, closeTab, setActiveTab, reorderTabs, type Tab } from '../store/tabStore';
-import { openNewTabModal } from '../store/uiStore';
+import { tabStore, closeTab, setActiveTab, reorderTabs, type Tab } from '../../store/tabStore';
+import { openNewTabModal } from '../../store/uiStore';
 import { TabItem } from './TabItem';
 
 export type TabListProps = {

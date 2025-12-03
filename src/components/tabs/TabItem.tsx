@@ -1,5 +1,5 @@
 import { X, Loader2, Globe } from 'lucide-react';
-import { type Tab } from '../store/tabStore';
+import { type Tab } from '../../store/tabStore';
 
 /**
  * Maximum length for tab title before truncation

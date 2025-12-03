@@ -3,11 +3,10 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 function isValidUrl(input: string): boolean {
-  // Check if it looks like a URL (has protocol or domain pattern)
   const urlPattern = /^(https?:\/\/|www\.)|^[a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z]{2,})+/;
   return urlPattern.test(input.trim());
 }
@@ -16,14 +15,12 @@ function formatUrl(input: string): string {
   const trimmed = input.trim();
 
   if (isValidUrl(trimmed)) {
-    // Add https:// if no protocol specified
     if (!/^https?:\/\//i.test(trimmed)) {
       return `https://${trimmed}`;
     }
     return trimmed;
   }
 
-  // Not a URL, search with Google
   const searchQuery = encodeURIComponent(trimmed);
   return `https://www.google.com/search?q=${searchQuery}`;
 }

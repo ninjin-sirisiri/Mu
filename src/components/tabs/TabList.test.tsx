@@ -8,7 +8,7 @@ import {
   setActiveTab,
   resetTabStore,
   type Tab
-} from '../store/tabStore';
+} from '../../store/tabStore';
 import { TabList } from './TabList';
 
 // Clean up after each test

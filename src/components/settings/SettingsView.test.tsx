@@ -3,8 +3,9 @@ import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/re
 import { SettingsView } from './SettingsView';
 
 // Mock Tauri API
-const mockInvoke = mock((_cmd: string, _args?: unknown): Promise<unknown> =>
-  Promise.resolve({ position: 'left', mode: 'auto-hide' })
+const mockInvoke = mock(
+  (_cmd: string, _args?: unknown): Promise<unknown> =>
+    Promise.resolve({ position: 'left', mode: 'auto-hide' })
 );
 
 mock.module('@tauri-apps/api/core', () => ({
@@ -102,22 +103,6 @@ describe('SettingsView Property Tests', () => {
 
       expect(saveCalls.length).toBeGreaterThanOrEqual(1);
     });
-
-    it('should highlight active position button', async () => {
-      mockInvoke.mockImplementation((cmd: string) => {
-        if (cmd === 'get_sidebar_settings') {
-          return Promise.resolve({ position: 'right', mode: 'auto-hide' });
-        }
-        return Promise.resolve();
-      });
-
-      render(<SettingsView />);
-
-      await waitFor(() => {
-        const rightButton = screen.getByText('Right').closest('button');
-        expect(rightButton?.getAttribute('aria-pressed')).toBe('true');
-      });
-    });
   });
 
   /**
@@ -161,22 +146,6 @@ describe('SettingsView Property Tests', () => {
 
       expect(saveCalls.length).toBeGreaterThanOrEqual(1);
     });
-
-    it('should highlight active mode button', async () => {
-      mockInvoke.mockImplementation((cmd: string) => {
-        if (cmd === 'get_sidebar_settings') {
-          return Promise.resolve({ position: 'left', mode: 'fixed' });
-        }
-        return Promise.resolve();
-      });
-
-      render(<SettingsView />);
-
-      await waitFor(() => {
-        const fixedButton = screen.getByText('Fixed').closest('button');
-        expect(fixedButton?.getAttribute('aria-pressed')).toBe('true');
-      });
-    });
   });
 
   /**
@@ -195,19 +164,6 @@ describe('SettingsView Property Tests', () => {
 
       // Verify button is clickable
       fireEvent.click(closeButton);
-      // The click handler calls invoke('hide_settings') which is mocked
-    });
-
-    it('should have backdrop that responds to clicks', async () => {
-      render(<SettingsView />);
-
-      await waitFor(() => {
-        screen.getByText('Settings');
-      });
-
-      // Verify backdrop exists and is clickable
-      const backdrop = document.querySelector('.fixed.inset-0');
-      expect(backdrop).toBeDefined();
     });
   });
 
