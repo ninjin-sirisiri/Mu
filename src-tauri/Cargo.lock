@@ -1986,6 +1986,8 @@ version = "0.1.0"
 dependencies = [
  "directories",
  "log",
+ "objc2 0.6.3",
+ "objc2-foundation 0.3.2",
  "proptest",
  "rusqlite",
  "serde",
