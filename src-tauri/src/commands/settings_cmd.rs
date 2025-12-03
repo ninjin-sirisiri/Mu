@@ -132,17 +132,9 @@ pub fn fetch_page_title(app_handle: tauri::AppHandle) {
       });
     }
 
-    // Linux: Use JavaScript fallback (WebKitGTK doesn't expose title directly via wry)
+    // Linux: Use host name as fallback (WebKitGTK doesn't expose title directly via wry)
     #[cfg(target_os = "linux")]
     {
-      use tauri::WebviewExt;
-
-      // Use JavaScript to get title, then use IPC callback
-      let favicon_url_clone = favicon_url.clone();
-      let app_handle_linux = app_handle_clone.clone();
-
-      // For Linux, we'll use a simpler approach: extract title from URL or use host
-      // since WebKitGTK's with_webview doesn't provide easy title access
       let title = url
         .parse::<tauri::Url>()
         .ok()
@@ -151,9 +143,9 @@ pub fn fetch_page_title(app_handle: tauri::AppHandle) {
 
       let page_info = PageInfoEvent {
         title,
-        favicon: favicon_url_clone,
+        favicon: favicon_url,
       };
-      let _ = app_handle_linux.emit_to("app", "page_info", page_info);
+      let _ = app_handle_clone.emit_to("app", "page_info", page_info);
     }
   }
 }
