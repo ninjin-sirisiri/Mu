@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useStoreValue } from '@simplestack/store/react';
 import { invoke } from '@tauri-apps/api/core';
+import { NewTabModal } from './components/NewTabModal';
 import { Sidebar } from './components/Sidebar';
 import { TopNavBar } from './components/TopNavBar';
 import { Toaster } from './components/ui/sonner';
@@ -15,11 +16,12 @@ const SIDEBAR_WIDTH = 280;
 const TOPNAV_HEIGHT = 56;
 
 // Get view type from URL parameter
-function getViewType(): 'topnav' | 'sidebar' | 'full' {
+function getViewType(): 'topnav' | 'sidebar' | 'dialog' | 'full' {
   const params = new URLSearchParams(globalThis.location.search);
   const view = params.get('view');
   if (view === 'topnav') return 'topnav';
   if (view === 'sidebar') return 'sidebar';
+  if (view === 'dialog') return 'dialog';
   return 'full';
 }
 
@@ -37,7 +39,7 @@ export default function App() {
 
   // Set up WebView event listeners to update tab state
   // Requirements: 5.1, 5.2, 5.3, 5.5
-  useWebViewEvents();
+  useWebViewEvents(viewType);
 
   // Subscribe to tab store to react to active tab changes
   const tabState = useStoreValue(tabStore);
@@ -91,6 +93,15 @@ export default function App() {
           hideDelay={300}
           triggerZoneWidth={TRIGGER_LEFT}
         />
+      </div>
+    );
+  }
+
+  if (viewType === 'dialog') {
+    return (
+      <div className="relative w-full h-screen">
+        <Toaster />
+        <NewTabModal />
       </div>
     );
   }

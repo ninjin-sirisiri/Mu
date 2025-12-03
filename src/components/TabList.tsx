@@ -1,14 +1,8 @@
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useStoreValue } from '@simplestack/store/react';
-import {
-  tabStore,
-  createTab,
-  closeTab,
-  setActiveTab,
-  reorderTabs,
-  type Tab
-} from '../store/tabStore';
+import { tabStore, closeTab, setActiveTab, reorderTabs, type Tab } from '../store/tabStore';
+import { openNewTabModal } from '../store/uiStore';
 import { TabItem } from './TabItem';
 
 export type TabListProps = {
@@ -131,7 +125,7 @@ export function ConnectedTabList() {
       activeTabId={activeTabId}
       onTabClick={setActiveTab}
       onTabClose={closeTab}
-      onNewTab={() => createTab()}
+      onNewTab={openNewTabModal}
       onTabReorder={reorderTabs}
     />
   );

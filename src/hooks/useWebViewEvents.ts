@@ -1,7 +1,12 @@
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { updateTab, getActiveTab } from '../store/tabStore';
+import { updateTab, getActiveTab, createTab } from '../store/tabStore';
+
+// Module-level debounce state for create_new_tab event
+// This prevents duplicate tab creation in React StrictMode
+let lastNewTabUrl = '';
+let lastNewTabTime = 0;
 
 /**
  * Event payload for page load events from the Rust backend
@@ -34,9 +39,10 @@ export type PageInfoEvent = {
  * - page_load_finished: When a page finishes loading (sets isLoading=false)
  * - navigation: When the URL changes
  *
+ * @param viewType - The type of view ('topnav' | 'sidebar' | 'dialog' | 'full')
  * Requirements: 5.1, 5.2, 5.3, 5.5
  */
-export function useWebViewEvents(): void {
+export function useWebViewEvents(viewType?: string): void {
   useEffect(() => {
     const unlisteners: UnlistenFn[] = [];
 
@@ -108,6 +114,22 @@ export function useWebViewEvents(): void {
         }
       });
       unlisteners.push(unlistenPageInfo);
+
+      // Listen for new tab creation events from dialog WebView (sidebar only)
+      if (viewType === 'sidebar') {
+        const unlistenNewTab = await listen<{ url: string }>('create_new_tab', event => {
+          const now = Date.now();
+          // Debounce: ignore duplicate events within 500ms for the same URL
+          // Uses module-level variables to work across StrictMode double-mount
+          if (event.payload.url === lastNewTabUrl && now - lastNewTabTime < 500) {
+            return;
+          }
+          lastNewTabUrl = event.payload.url;
+          lastNewTabTime = now;
+          createTab(event.payload.url);
+        });
+        unlisteners.push(unlistenNewTab);
+      }
     }
 
     setupListeners();
@@ -118,7 +140,7 @@ export function useWebViewEvents(): void {
         unlisten();
       }
     };
-  }, []);
+  }, [viewType]);
 }
 
 /**

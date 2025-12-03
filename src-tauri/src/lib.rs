@@ -215,11 +215,80 @@ fn set_sidebar_width(app_handle: tauri::AppHandle, width: f64) -> Result<(), Str
   }
 }
 
+/// Shows the new tab dialog WebView
+#[tauri::command]
+fn show_new_tab_dialog(app_handle: tauri::AppHandle) -> Result<(), String> {
+  if let Some(webview) = app_handle.get_webview("dialog") {
+    if let Some(window) = app_handle.get_window("main") {
+      let size = window.inner_size().map_err(|e| e.to_string())?;
+      // Reset position to (0,0) and set size to full window
+      webview
+        .set_position(tauri::LogicalPosition::new(0.0, 0.0))
+        .map_err(|e| format!("Failed to set dialog position: {}", e))?;
+      webview
+        .set_size(tauri::PhysicalSize::new(size.width, size.height))
+        .map_err(|e| format!("Failed to show dialog: {}", e))?;
+      // Set focus to the dialog WebView, clear and focus the input element
+      let _ = webview.set_focus();
+      let _ = webview.eval(
+        "setTimeout(() => { const input = document.querySelector('input'); if (input) { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); input.focus(); } }, 100);"
+      );
+    }
+    Ok(())
+  } else {
+    Err("Dialog webview not found".to_string())
+  }
+}
+
+/// Hides the new tab dialog WebView
+#[tauri::command]
+fn hide_new_tab_dialog(app_handle: tauri::AppHandle) -> Result<(), String> {
+  if let Some(webview) = app_handle.get_webview("dialog") {
+    webview
+      .set_size(tauri::LogicalSize::new(0.0, 0.0))
+      .map_err(|e| format!("Failed to hide dialog: {}", e))?;
+    Ok(())
+  } else {
+    Err("Dialog webview not found".to_string())
+  }
+}
+
+/// Event payload for new tab creation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewTabEvent {
+  pub url: String,
+}
+
+/// Navigates to URL and hides dialog (called from dialog WebView)
+/// Tab creation is handled by sidebar via create_new_tab event
+#[tauri::command]
+fn navigate_to(app_handle: tauri::AppHandle, url: String) -> Result<(), String> {
+  let url = normalize_url(&url);
+
+  if url.parse::<tauri::Url>().is_err() {
+    return Err(format!("Invalid URL: {}", url));
+  }
+
+  // Hide dialog first
+  if let Some(dialog) = app_handle.get_webview("dialog") {
+    let _ = dialog.set_size(tauri::LogicalSize::new(0.0, 0.0));
+  }
+
+  // Emit event to sidebar to create new tab (only sidebar listens for this)
+  let _ = app_handle.emit("create_new_tab", NewTabEvent { url: url.clone() });
+
+  // Note: Navigation happens automatically when sidebar creates the tab
+  // and sets it as active, triggering switch_tab
+
+  Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
       navigate,
+      navigate_to,
       go_back,
       go_forward,
       reload,
@@ -229,7 +298,9 @@ pub fn run() {
       get_tab_info,
       fetch_page_title,
       set_topnav_height,
-      set_sidebar_width
+      set_sidebar_width,
+      show_new_tab_dialog,
+      hide_new_tab_dialog
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -340,9 +411,21 @@ pub fn run() {
         tauri::Size::Physical(tauri::PhysicalSize::new(sidebar_trigger_width, size.height)),
       )?;
 
+      // Dialog Webview (centered overlay for new tab dialog, starts hidden with 0x0 size)
+      let dialog_webview = window.add_child(
+        tauri::webview::WebviewBuilder::new(
+          "dialog",
+          tauri::WebviewUrl::App("index.html?view=dialog".into()),
+        )
+        .transparent(true),
+        tauri::LogicalPosition::new(0, 0),
+        tauri::Size::Physical(tauri::PhysicalSize::new(0, 0)),
+      )?;
+
       // Handle window resize - update UI webview sizes
       let topnav_handle = topnav_webview.clone();
       let sidebar_handle = sidebar_webview.clone();
+      let dialog_handle = dialog_webview.clone();
 
       window.on_window_event(move |event| {
         if let tauri::WindowEvent::Resized(size) = event {
@@ -359,6 +442,15 @@ pub fn run() {
               current_size.width,
               size.height,
             )));
+          }
+          // Update dialog size if it's visible (non-zero size)
+          if let Ok(current_size) = dialog_handle.size() {
+            if current_size.width > 0 && current_size.height > 0 {
+              let _ = dialog_handle.set_size(tauri::Size::Physical(tauri::PhysicalSize::new(
+                size.width,
+                size.height,
+              )));
+            }
           }
         }
       });
