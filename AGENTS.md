@@ -43,3 +43,4 @@
     - Run `bun run dev` (or `bun run tauri dev` as per README) to start the development server.
     - Follow `requirements.md` for implementing features like Command Palette, Sidebar, etc.
 6.  **Documentation**: Keep `README.md` and `requirements.md` updated as features are implemented.
+7.  **UI WebView Architecture**: When creating new UI elements, create a dedicated WebView for that UI and display it there rather than embedding everything in a single view.
