@@ -145,7 +145,7 @@ Tabs and settings are consolidated in the sidebar.
 - [x] Basic browsing features (WebView)
 - [x] Command Palette
 - [x] Vertical Tabs (Sidebar)
-- [ ] Sidebar customization (Left/Right placement, Auto-hide)
+- [x] Sidebar customization (Left/Right placement, Auto-hide)
 - [ ] Ad blocking feature
 - [ ] Mobile support (iOS / Android)
 
