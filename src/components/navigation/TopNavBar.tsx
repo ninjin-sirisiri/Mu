@@ -88,7 +88,7 @@ export function TopNavBar({
         data-testid="topnav-bar"
         data-visible={isVisible}
         className={`
-          w-full z-50
+          w-full z-50 overflow-hidden
           bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950
           border-b border-gray-700/50 backdrop-blur-sm
           transition-[transform,opacity] duration-300 ease-out

@@ -80,8 +80,8 @@ export function NavigationControls() {
   return (
     <div
       data-tauri-drag-region
-      className="flex items-center justify-between px-4 py-3.5 text-white">
-      <div className="flex items-center gap-2">
+      className="flex items-center gap-2 px-4 py-3.5 text-white w-full">
+      <div className="flex items-center gap-2 shrink-0">
         <Button
           variant="ghost"
           size="sm"
@@ -105,7 +105,7 @@ export function NavigationControls() {
         </Button>
       </div>
 
-      <div className="flex-1 mx-4">
+      <div className="flex-1 min-w-0">
         <Input
           type="text"
           value={url}
@@ -116,7 +116,7 @@ export function NavigationControls() {
         />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <Button
           variant="ghost"
           size="sm"

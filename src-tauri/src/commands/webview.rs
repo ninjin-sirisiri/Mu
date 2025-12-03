@@ -7,9 +7,14 @@ use tauri::Manager;
 pub fn set_topnav_height(app_handle: tauri::AppHandle, height: f64) -> Result<(), String> {
   if let Some(webview) = app_handle.get_webview("topnav") {
     if let Some(window) = app_handle.get_window("main") {
-      let size = window.inner_size().map_err(|e| e.to_string())?;
+      let window_size = window.inner_size().map_err(|e| e.to_string())?;
+      let scale_factor = window.scale_factor().unwrap_or(1.0);
+
+      // Convert logical height to physical height
+      let physical_height = (height * scale_factor).round() as u32;
+
       webview
-        .set_size(tauri::LogicalSize::new(size.width as f64, height))
+        .set_size(tauri::PhysicalSize::new(window_size.width, physical_height))
         .map_err(|e| format!("Failed to set topnav size: {}", e))?;
     }
     Ok(())
