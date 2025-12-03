@@ -1,7 +1,15 @@
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { updateTab, getActiveTab, createTab } from '../store/tabStore';
+import {
+  updateTab,
+  getActiveTab,
+  createTab,
+  closeTab,
+  activateNextTab,
+  activatePreviousTab,
+  activateTabByIndex
+} from '../store/tabStore';
 
 // Module-level debounce state for create_new_tab event
 // This prevents duplicate tab creation in React StrictMode
@@ -129,6 +137,55 @@ export function useWebViewEvents(viewType?: string): void {
           createTab(event.payload.url);
         });
         unlisteners.push(unlistenNewTab);
+
+        // Listen for keyboard shortcut events (sidebar only)
+        // Requirements: 2.1, 2.2, 2.3, 2.4, 2.5
+
+        // Ctrl+T - New tab (opens command palette via dialog)
+        const unlistenShortcutNewTab = await listen('shortcut_new_tab', () => {
+          invoke('show_new_tab_dialog').catch(() => {
+            // Fallback: create a new tab directly if dialog fails
+            createTab();
+          });
+        });
+        unlisteners.push(unlistenShortcutNewTab);
+
+        // Ctrl+W - Close current tab
+        const unlistenShortcutCloseTab = await listen('shortcut_close_tab', () => {
+          const activeTab = getActiveTab();
+          if (activeTab) {
+            closeTab(activeTab.id);
+          }
+        });
+        unlisteners.push(unlistenShortcutCloseTab);
+
+        // Ctrl+Tab - Next tab
+        const unlistenShortcutNextTab = await listen('shortcut_next_tab', () => {
+          activateNextTab();
+        });
+        unlisteners.push(unlistenShortcutNextTab);
+
+        // Ctrl+Shift+Tab - Previous tab
+        const unlistenShortcutPreviousTab = await listen('shortcut_previous_tab', () => {
+          activatePreviousTab();
+        });
+        unlisteners.push(unlistenShortcutPreviousTab);
+
+        // Ctrl+1-9 - Switch to tab by index
+        const unlistenShortcutSwitchToTab = await listen<number>(
+          'shortcut_switch_to_tab',
+          event => {
+            activateTabByIndex(event.payload);
+          }
+        );
+        unlisteners.push(unlistenShortcutSwitchToTab);
+
+        // Ctrl+B - Toggle sidebar visibility
+        const unlistenShortcutToggleSidebar = await listen('shortcut_toggle_sidebar', () => {
+          // Emit a custom event that the Sidebar component can listen to
+          globalThis.dispatchEvent(new CustomEvent('toggle-sidebar'));
+        });
+        unlisteners.push(unlistenShortcutToggleSidebar);
       }
     }
 

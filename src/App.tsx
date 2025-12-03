@@ -3,26 +3,30 @@ import { toast } from 'sonner';
 import { useStoreValue } from '@simplestack/store/react';
 import { invoke } from '@tauri-apps/api/core';
 import { NewTabModal } from './components/dialog';
+import { ShortcutsHelp } from './components/help';
 import { TopNavBar } from './components/navigation';
 import { SettingsView } from './components/settings';
 import { ConnectedSidebar } from './components/sidebar';
 import { Toaster } from './components/ui/sonner';
+import { useShortcutPrevention } from './hooks/useShortcutPrevention';
 import { useWebViewEvents } from './hooks/useWebViewEvents';
 import './index.css';
 import { settingsStore, loadSettings, listenForSettingsChanges } from './store/settingsStore';
+import { shortcutStore, setupShortcutEventListeners } from './store/shortcutStore';
 import { tabStore, getActiveTab } from './store/tabStore';
 
 const TRIGGER_TOP = 8;
 const TOPNAV_HEIGHT = 56;
 
 // Get view type from URL parameter
-function getViewType(): 'topnav' | 'sidebar' | 'dialog' | 'settings' | 'full' {
+function getViewType(): 'topnav' | 'sidebar' | 'dialog' | 'settings' | 'help' | 'full' {
   const params = new URLSearchParams(globalThis.location.search);
   const view = params.get('view');
   if (view === 'topnav') return 'topnav';
   if (view === 'sidebar') return 'sidebar';
   if (view === 'dialog') return 'dialog';
   if (view === 'settings') return 'settings';
+  if (view === 'help') return 'help';
   return 'full';
 }
 
@@ -42,6 +46,10 @@ export default function App() {
   // Requirements: 5.1, 5.2, 5.3, 5.5
   useWebViewEvents(viewType);
 
+  // Prevent default browser behavior for registered shortcuts
+  // Requirements: 6.3 - WHEN a shortcut is triggered THEN Mu SHALL prevent the default browser behavior
+  useShortcutPrevention();
+
   // Subscribe to tab store to react to active tab changes
   const tabState = useStoreValue(tabStore);
   const activeTabId = tabState?.activeTabId ?? null;
@@ -50,6 +58,10 @@ export default function App() {
   // Requirements: 3.2
   const settingsState = useStoreValue(settingsStore);
   const isSettingsLoading = settingsState?.isLoading ?? true;
+
+  // Subscribe to shortcut store for UI state
+  // Requirements: 4.1, 7.1
+  useStoreValue(shortcutStore);
 
   // Load settings on app startup (only for sidebar view which uses settings)
   // Requirements: 3.2
@@ -74,6 +86,29 @@ export default function App() {
     return () => {
       mounted = false;
       unlisten?.();
+    };
+  }, [viewType]);
+
+  // Set up shortcut event listeners (for sidebar view which manages UI state)
+  // Requirements: 4.1, 7.1 - Listen for shortcut events from Rust
+  useEffect(() => {
+    if (viewType !== 'sidebar') return;
+
+    let unlistenShortcuts: (() => void) | null = null;
+    let mounted = true;
+
+    (async () => {
+      const fn = await setupShortcutEventListeners();
+      if (mounted) {
+        unlistenShortcuts = fn;
+      } else {
+        fn();
+      }
+    })();
+
+    return () => {
+      mounted = false;
+      unlistenShortcuts?.();
     };
   }, [viewType]);
 
@@ -151,6 +186,15 @@ export default function App() {
       <div className="relative w-full h-screen">
         <Toaster />
         <SettingsView />
+      </div>
+    );
+  }
+
+  if (viewType === 'help') {
+    return (
+      <div className="relative w-full h-screen">
+        <Toaster />
+        <ShortcutsHelp />
       </div>
     );
   }

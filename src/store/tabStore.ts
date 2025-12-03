@@ -526,6 +526,55 @@ export function activatePreviousTab(): void {
 }
 
 /**
+ * Activate a tab by its 1-based index
+ * Index 9 always activates the last tab (regardless of tab count)
+ * If index > tab count, no action is taken (except for index 9)
+ * Requirements: 2.5, 7.5
+ */
+export function activateTabByIndex(index: number): void {
+  try {
+    const state = tabStore.get();
+    if (state.tabs.length === 0) return;
+
+    // Index 9 always means "last tab"
+    if (index === 9) {
+      const lastTab = state.tabs.at(-1);
+      if (lastTab) {
+        tabStore.set(s => ({ ...s, activeTabId: lastTab.id }));
+      }
+    } else {
+      // Convert 1-based index to 0-based
+      const zeroBasedIndex = index - 1;
+
+      // If index is out of bounds, do nothing
+      if (zeroBasedIndex < 0 || zeroBasedIndex >= state.tabs.length) {
+        return;
+      }
+
+      const targetTab = state.tabs[zeroBasedIndex];
+      tabStore.set(s => ({ ...s, activeTabId: targetTab.id }));
+    }
+
+    // Validate state after operation
+    const newState = tabStore.get();
+    const validation = validateState(newState);
+    if (!validation.isValid) {
+      logError('activateTabByIndex', `State validation failed: ${validation.errors.join(', ')}`);
+      const repairedState = repairState(newState);
+      tabStore.set(repairedState);
+    }
+  } catch (error) {
+    logError('activateTabByIndex', error);
+    const opError = new TabOperationError(
+      'Failed to activate tab by index',
+      'activateTabByIndex',
+      error
+    );
+    notifyError(opError);
+  }
+}
+
+/**
  * Reset the store to initial state (useful for testing)
  */
 export function resetTabStore(): void {

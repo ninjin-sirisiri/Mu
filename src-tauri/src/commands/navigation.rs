@@ -42,3 +42,10 @@ pub fn reload(app_handle: tauri::AppHandle) {
     let _ = webview.eval("window.location.reload()");
   }
 }
+
+#[tauri::command]
+pub fn stop_loading(app_handle: tauri::AppHandle) {
+  if let Some(webview) = app_handle.get_webview("content") {
+    let _ = webview.eval("window.stop()");
+  }
+}

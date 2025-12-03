@@ -2,6 +2,7 @@ mod adblocker;
 mod commands;
 mod events;
 mod settings;
+mod shortcuts;
 mod state;
 mod utils;
 
@@ -12,11 +13,13 @@ use tauri::WebviewUrl;
 
 use adblocker::AdBlockerState;
 use commands::{
-  add_to_allowlist, close_tab, create_tab, fetch_page_title, get_adblocker_settings, get_allowlist,
-  get_block_stats, get_sidebar_settings, get_tab_info, go_back, go_forward, hide_new_tab_dialog,
-  hide_settings, navigate, navigate_to, persist_block_count, reload, remove_from_allowlist,
-  save_sidebar_settings, set_adblocker_enabled, set_content_layout, set_sidebar_position,
-  set_sidebar_width, set_topnav_height, show_new_tab_dialog, show_settings, switch_tab,
+  add_to_allowlist, close_tab, create_tab, fetch_page_title, find_in_page, get_adblocker_settings,
+  get_allowlist, get_block_stats, get_shortcut_list, get_sidebar_settings, get_tab_info,
+  get_zoom_level, go_back, go_forward, hide_help, hide_new_tab_dialog, hide_settings, navigate,
+  navigate_to, persist_block_count, reload, remove_from_allowlist, save_sidebar_settings,
+  set_adblocker_enabled, set_content_layout, set_sidebar_position, set_sidebar_width,
+  set_topnav_height, show_help, show_new_tab_dialog, show_settings, stop_loading, switch_tab,
+  toggle_fullscreen, toggle_sidebar, zoom_in, zoom_out, zoom_reset,
 };
 use events::{NavigationEvent, PageInfoEvent, PageLoadEvent};
 use settings::{
@@ -31,12 +34,14 @@ pub use utils::normalize_url;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
+    .plugin(tauri_plugin_global_shortcut::Builder::new().build())
     .invoke_handler(tauri::generate_handler![
       navigate,
       navigate_to,
       go_back,
       go_forward,
       reload,
+      stop_loading,
       create_tab,
       switch_tab,
       close_tab,
@@ -59,7 +64,21 @@ pub fn run() {
       remove_from_allowlist,
       get_allowlist,
       get_block_stats,
-      persist_block_count
+      persist_block_count,
+      // Shortcut commands
+      toggle_sidebar,
+      toggle_fullscreen,
+      // Zoom commands
+      zoom_in,
+      zoom_out,
+      zoom_reset,
+      get_zoom_level,
+      // Find in page
+      find_in_page,
+      // Help overlay
+      show_help,
+      hide_help,
+      get_shortcut_list
     ])
     .setup(|app| {
       // Initialize settings database
@@ -84,6 +103,8 @@ pub fn run() {
       let initial_settings = settings::get_sidebar_settings(&settings_db);
       let app_state = AppState {
         sidebar_position: Mutex::new(initial_settings.position),
+        sidebar_visible: Mutex::new(true), // Sidebar starts visible
+        zoom_level: Mutex::new(state::DEFAULT_ZOOM_LEVEL), // Zoom starts at 100%
       };
       app.manage(app_state);
 
@@ -237,11 +258,37 @@ pub fn run() {
         tauri::Size::Physical(tauri::PhysicalSize::new(0, 0)),
       )?;
 
+      // Help Webview (overlay for keyboard shortcuts help, starts hidden with 0x0 size)
+      let help_webview = window.add_child(
+        tauri::webview::WebviewBuilder::new(
+          "help",
+          tauri::WebviewUrl::App("index.html?view=help".into()),
+        )
+        .transparent(true),
+        tauri::LogicalPosition::new(0, 0),
+        tauri::Size::Physical(tauri::PhysicalSize::new(0, 0)),
+      )?;
+
+      // Register keyboard shortcuts
+      if let Err(e) = shortcuts::register_navigation_shortcuts(app.handle()) {
+        log::error!("[Shortcuts] Failed to register navigation shortcuts: {}", e);
+      }
+      if let Err(e) = shortcuts::register_tab_shortcuts(app.handle()) {
+        log::error!("[Shortcuts] Failed to register tab shortcuts: {}", e);
+      }
+      if let Err(e) = shortcuts::register_ui_shortcuts(app.handle()) {
+        log::error!("[Shortcuts] Failed to register UI shortcuts: {}", e);
+      }
+      if let Err(e) = shortcuts::register_page_shortcuts(app.handle()) {
+        log::error!("[Shortcuts] Failed to register page shortcuts: {}", e);
+      }
+
       // Handle window resize - update UI webview sizes
       let topnav_handle = topnav_webview.clone();
       let sidebar_handle = sidebar_webview.clone();
       let dialog_handle = dialog_webview.clone();
       let settings_handle = settings_webview.clone();
+      let help_handle = help_webview.clone();
       let app_handle = app.handle().clone();
 
       window.on_window_event(move |event| {
@@ -285,6 +332,16 @@ pub fn run() {
             && current_size.height > 0
           {
             let _ = settings_handle.set_size(tauri::Size::Physical(tauri::PhysicalSize::new(
+              size.width,
+              size.height,
+            )));
+          }
+          // Update help size if it's visible (non-zero size)
+          if let Ok(current_size) = help_handle.size()
+            && current_size.width > 0
+            && current_size.height > 0
+          {
+            let _ = help_handle.set_size(tauri::Size::Physical(tauri::PhysicalSize::new(
               size.width,
               size.height,
             )));

@@ -133,6 +133,22 @@ export function Sidebar({
     [clearHideTimeout]
   );
 
+  // Listen for toggle sidebar shortcut event (Ctrl+B)
+  useEffect(() => {
+    function handleToggleSidebar() {
+      setIsVisible(prev => {
+        const newVisible = !prev;
+        onVisibilityChange?.(newVisible);
+        return newVisible;
+      });
+    }
+
+    globalThis.addEventListener('toggle-sidebar', handleToggleSidebar);
+    return () => {
+      globalThis.removeEventListener('toggle-sidebar', handleToggleSidebar);
+    };
+  }, [onVisibilityChange]);
+
   // Shadow direction based on position
   const shadowClass =
     position === 'left'
