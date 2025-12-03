@@ -56,3 +56,22 @@ pub struct SidebarSettings {
   pub position: SidebarPosition,
   pub mode: SidebarMode,
 }
+
+/// Ad blocker settings structure for persistence
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct AdBlockerSettings {
+  pub enabled: bool,
+  pub allowlist: Vec<String>,
+  pub block_count: u64,
+}
+
+impl Default for AdBlockerSettings {
+  fn default() -> Self {
+    Self {
+      enabled: true,
+      allowlist: Vec::new(),
+      block_count: 0,
+    }
+  }
+}

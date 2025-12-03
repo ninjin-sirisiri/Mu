@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { invoke } from '@tauri-apps/api/core';
 import { type SidebarPosition, type SidebarMode } from '../../store/settingsStore';
+import { AdBlockerSettings } from './AdBlockerSettings';
 import { PositionToggleGroup, ModeToggleGroup } from './ToggleGroups';
 
 type SidebarSettings = {
@@ -114,6 +115,14 @@ export function SettingsView() {
 
           {/* Content */}
           <div className="p-5 space-y-6">
+            {/* Ad Blocker Setting */}
+            <fieldset className="space-y-3">
+              <legend className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                Ad Blocker
+              </legend>
+              <AdBlockerSettings />
+            </fieldset>
+
             {/* Position Setting */}
             <fieldset className="space-y-3">
               <legend className="text-xs font-medium text-gray-400 uppercase tracking-wide">

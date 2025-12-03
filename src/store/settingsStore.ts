@@ -1,6 +1,7 @@
 import { store } from '@simplestack/store';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { type AdBlockerSettings, DEFAULT_ADBLOCKER_SETTINGS } from '../types/adblocker';
 
 /**
  * Sidebar position setting
@@ -25,6 +26,7 @@ export type SidebarSettings = {
  */
 export type SettingsState = {
   sidebar: SidebarSettings;
+  adBlocker: AdBlockerSettings;
   isLoading: boolean;
   isSettingsPanelOpen: boolean;
 };
@@ -43,6 +45,7 @@ export const DEFAULT_SIDEBAR_SETTINGS: SidebarSettings = {
  */
 export const settingsStore = store<SettingsState>({
   sidebar: DEFAULT_SIDEBAR_SETTINGS,
+  adBlocker: DEFAULT_ADBLOCKER_SETTINGS,
   isLoading: true,
   isSettingsPanelOpen: false
 });
@@ -167,6 +170,7 @@ export function closeSettingsPanel(): void {
 export function resetSettingsStore(): void {
   settingsStore.set({
     sidebar: DEFAULT_SIDEBAR_SETTINGS,
+    adBlocker: DEFAULT_ADBLOCKER_SETTINGS,
     isLoading: true,
     isSettingsPanelOpen: false
   });
@@ -190,4 +194,62 @@ export async function listenForSettingsChanges(): Promise<() => void> {
     updateSettings(event.payload);
   });
   return unlisten;
+}
+
+// ============ Ad Blocker Actions ============
+
+/**
+ * Load ad blocker settings from the backend
+ * Requirements: 2.1, 2.5
+ */
+export async function loadAdBlockerSettings(): Promise<void> {
+  try {
+    const settings = await invoke<AdBlockerSettings>('get_adblocker_settings');
+    settingsStore.set(s => ({
+      ...s,
+      adBlocker: settings
+    }));
+  } catch (error) {
+    logError('loadAdBlockerSettings', error);
+    logWarning('loadAdBlockerSettings', 'Using default ad blocker settings');
+    settingsStore.set(s => ({
+      ...s,
+      adBlocker: DEFAULT_ADBLOCKER_SETTINGS
+    }));
+  }
+}
+
+/**
+ * Set ad blocker enabled state and save to backend
+ * Requirements: 2.1, 2.2, 2.4
+ */
+export async function setAdBlockerEnabled(enabled: boolean): Promise<void> {
+  const previousSettings = settingsStore.get().adBlocker;
+
+  // Update store immediately for responsive UI
+  settingsStore.set(s => ({
+    ...s,
+    adBlocker: { ...s.adBlocker, enabled }
+  }));
+
+  try {
+    await invoke('set_adblocker_enabled', { enabled });
+  } catch (error) {
+    logError('setAdBlockerEnabled', error);
+    // Revert on failure
+    settingsStore.set(s => ({
+      ...s,
+      adBlocker: previousSettings
+    }));
+  }
+}
+
+/**
+ * Update ad blocker settings from external source
+ */
+export function updateAdBlockerSettings(settings: AdBlockerSettings): void {
+  settingsStore.set(s => ({
+    ...s,
+    adBlocker: settings
+  }));
 }

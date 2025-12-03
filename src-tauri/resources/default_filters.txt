@@ -1,0 +1,65 @@
+# Default Ad Blocker Filter List for Mu Browser
+# Format: One domain per line
+# Lines starting with # are comments
+# Lines starting with || are domain suffix matches (matches domain and all subdomains)
+
+# Google Ads
+||googlesyndication.com^
+||googleadservices.com^
+||doubleclick.net^
+||googleads.g.doubleclick.net^
+||pagead2.googlesyndication.com^
+||adservice.google.com^
+
+# Facebook Ads
+||facebook.com/tr^
+||pixel.facebook.com^
+
+# Amazon Ads
+||amazon-adsystem.com^
+||aax.amazon.com^
+
+# Microsoft Ads
+||ads.microsoft.com^
+||ads.msn.com^
+
+# Common Ad Networks
+||adnxs.com^
+||adsrvr.org^
+||advertising.com^
+||adform.net^
+||criteo.com^
+||criteo.net^
+||outbrain.com^
+||taboola.com^
+||pubmatic.com^
+||rubiconproject.com^
+||openx.net^
+||casalemedia.com^
+||contextweb.com^
+||bidswitch.net^
+||smartadserver.com^
+
+# Tracking
+||scorecardresearch.com^
+||quantserve.com^
+||bluekai.com^
+||krxd.net^
+||exelator.com^
+||rlcdn.com^
+||demdex.net^
+||omtrdc.net^
+||everesttech.net^
+
+# Analytics (optional - some users may want these)
+# ||google-analytics.com^
+# ||analytics.google.com^
+
+# Social Widgets (tracking)
+||platform.twitter.com/widgets^
+||connect.facebook.net^
+
+# Common Ad Domains
+ad.doubleclick.net
+ads.google.com
+pagead2.googlesyndication.com

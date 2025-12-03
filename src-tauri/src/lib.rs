@@ -1,3 +1,4 @@
+mod adblocker;
 mod commands;
 mod events;
 mod settings;
@@ -9,14 +10,18 @@ use tauri::Emitter;
 use tauri::Manager;
 use tauri::WebviewUrl;
 
+use adblocker::AdBlockerState;
 use commands::{
-  close_tab, create_tab, fetch_page_title, get_sidebar_settings, get_tab_info, go_back, go_forward,
-  hide_new_tab_dialog, hide_settings, navigate, navigate_to, reload, save_sidebar_settings,
-  set_content_layout, set_sidebar_position, set_sidebar_width, set_topnav_height,
-  show_new_tab_dialog, show_settings, switch_tab,
+  add_to_allowlist, close_tab, create_tab, fetch_page_title, get_adblocker_settings, get_allowlist,
+  get_block_stats, get_sidebar_settings, get_tab_info, go_back, go_forward, hide_new_tab_dialog,
+  hide_settings, navigate, navigate_to, persist_block_count, reload, remove_from_allowlist,
+  save_sidebar_settings, set_adblocker_enabled, set_content_layout, set_sidebar_position,
+  set_sidebar_width, set_topnav_height, show_new_tab_dialog, show_settings, switch_tab,
 };
 use events::{NavigationEvent, PageInfoEvent, PageLoadEvent};
-use settings::{SettingsDb, SidebarPosition, init_database};
+use settings::{
+  SettingsDb, SidebarPosition, get_adblocker_settings as db_get_adblocker_settings, init_database,
+};
 use state::AppState;
 
 // Re-export for external use
@@ -46,7 +51,15 @@ pub fn run() {
       show_settings,
       hide_settings,
       get_sidebar_settings,
-      save_sidebar_settings
+      save_sidebar_settings,
+      // Ad blocker commands
+      set_adblocker_enabled,
+      get_adblocker_settings,
+      add_to_allowlist,
+      remove_from_allowlist,
+      get_allowlist,
+      get_block_stats,
+      persist_block_count
     ])
     .setup(|app| {
       // Initialize settings database
@@ -73,6 +86,26 @@ pub fn run() {
         sidebar_position: Mutex::new(initial_settings.position),
       };
       app.manage(app_state);
+
+      // Initialize ad blocker state
+      let adblocker_settings = db_get_adblocker_settings(&settings_db);
+      let adblocker_state = Arc::new(AdBlockerState::new());
+
+      // Restore ad blocker state from persisted settings
+      adblocker_state.set_enabled(adblocker_settings.enabled);
+      adblocker_state.set_allowlist(adblocker_settings.allowlist);
+      // Note: block_count is kept in database, session count starts at 0
+
+      // Load default filter list
+      let default_filters = include_str!("../resources/default_filters.txt");
+      if let Ok(mut filter_engine) = adblocker_state.filter_engine.write() {
+        match filter_engine.load_from_str(default_filters) {
+          Ok(count) => log::info!("Loaded {} filter rules", count),
+          Err(e) => log::warn!("Failed to load filter rules: {}", e),
+        }
+      }
+
+      app.manage(adblocker_state);
       app.manage(settings_db);
       if cfg!(debug_assertions) {
         app.handle().plugin(

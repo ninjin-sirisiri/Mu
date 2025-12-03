@@ -1,9 +1,14 @@
+mod adblocker;
 mod dialog;
 mod navigation;
 mod settings_cmd;
 mod tabs;
 mod webview;
 
+pub use adblocker::{
+  add_to_allowlist, get_adblocker_settings, get_allowlist, get_block_stats, persist_block_count,
+  remove_from_allowlist, set_adblocker_enabled,
+};
 pub use dialog::{hide_new_tab_dialog, navigate_to, show_new_tab_dialog};
 pub use navigation::{go_back, go_forward, navigate, reload};
 pub use settings_cmd::{
