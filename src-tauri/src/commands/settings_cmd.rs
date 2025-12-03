@@ -111,13 +111,12 @@ pub fn fetch_page_title(app_handle: tauri::AppHandle) {
       let app_handle_mac = app_handle_clone.clone();
       let _ = webview.with_webview(move |wv| {
         use objc2::runtime::AnyObject;
-        use objc2::sel;
         use objc2_foundation::NSString;
 
         let wkwebview = wv.inner();
-        let wkwebview_ptr: *const AnyObject = std::ptr::from_ref(&*wkwebview).cast();
 
         unsafe {
+          let wkwebview_ptr: *const AnyObject = std::ptr::from_ref(&*wkwebview).cast();
           let title_ns: *const NSString = objc2::msg_send![wkwebview_ptr, title];
           if !title_ns.is_null() {
             let title_str = (*title_ns).to_string();
