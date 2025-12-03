@@ -1,65 +1,9 @@
 use directories::ProjectDirs;
 use rusqlite::{Connection, Result as SqliteResult};
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-/// Sidebar position setting
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
-#[serde(rename_all = "lowercase")]
-pub enum SidebarPosition {
-  #[default]
-  Left,
-  Right,
-}
-
-impl SidebarPosition {
-  fn as_str(&self) -> &'static str {
-    match self {
-      SidebarPosition::Left => "left",
-      SidebarPosition::Right => "right",
-    }
-  }
-
-  fn from_str(s: &str) -> Self {
-    match s {
-      "right" => SidebarPosition::Right,
-      _ => SidebarPosition::Left,
-    }
-  }
-}
-
-/// Sidebar display mode setting
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
-#[serde(rename_all = "kebab-case")]
-pub enum SidebarMode {
-  Fixed,
-  #[default]
-  AutoHide,
-}
-
-impl SidebarMode {
-  fn as_str(&self) -> &'static str {
-    match self {
-      SidebarMode::Fixed => "fixed",
-      SidebarMode::AutoHide => "auto-hide",
-    }
-  }
-
-  fn from_str(s: &str) -> Self {
-    match s {
-      "fixed" => SidebarMode::Fixed,
-      _ => SidebarMode::AutoHide,
-    }
-  }
-}
-
-/// Sidebar settings structure
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-pub struct SidebarSettings {
-  pub position: SidebarPosition,
-  pub mode: SidebarMode,
-}
+use super::types::{SidebarMode, SidebarPosition, SidebarSettings};
 
 /// Global database connection wrapped in a Mutex for thread safety
 pub struct SettingsDb {

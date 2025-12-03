@@ -173,16 +173,17 @@ export function Sidebar({
         data-position={position}
         data-mode={mode}
         className={`
-          absolute top-0 h-full
+          absolute top-0 h-full z-50
           bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950
           border-gray-700/50 backdrop-blur-sm
-          transition-transform duration-300 ease-out
+          transition-[transform,opacity] duration-300 ease-out
           ${position === 'left' ? 'left-0 border-r' : 'left-0 border-l'}
-          ${isVisible ? shadowClass : ''}
+          ${isVisible ? shadowClass : 'pointer-events-none'}
         `}
         style={{
           width,
-          transform: sidebarTransform
+          transform: sidebarTransform,
+          opacity: isVisible ? 1 : 0
         }}>
         <div className="flex flex-col h-full">
           {/* Header */}

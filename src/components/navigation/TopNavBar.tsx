@@ -88,14 +88,16 @@ export function TopNavBar({
         data-testid="topnav-bar"
         data-visible={isVisible}
         className={`
-          w-full
+          w-full z-50
           bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950
           border-b border-gray-700/50 backdrop-blur-sm
-          transition-transform duration-300 ease-out
-          ${isVisible ? 'shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)]' : ''}
+          transition-[transform,opacity] duration-300 ease-out
+          ${isVisible ? 'shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)]' : 'pointer-events-none'}
         `}
         style={{
-          transform: isVisible ? 'translateY(0)' : 'translateY(-100%)'
+          height: expandedHeight,
+          transform: isVisible ? 'translateY(0)' : 'translateY(-100%)',
+          opacity: isVisible ? 1 : 0
         }}
         onMouseEnter={handleNavBarEnter}>
         <NavigationControls />
