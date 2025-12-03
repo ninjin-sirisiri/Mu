@@ -146,7 +146,7 @@ Tabs and settings are consolidated in the sidebar.
 - [x] Command Palette
 - [x] Vertical Tabs (Sidebar)
 - [x] Sidebar customization (Left/Right placement, Auto-hide)
-- [ ] Ad blocking feature
+- [x] Ad blocking feature
 - [ ] Mobile support (iOS / Android)
 
 See the [open issues](https://github.com/ninjin-sirisiri/mu/issues) for a full list of proposed features (and known issues).

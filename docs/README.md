@@ -146,7 +146,7 @@ Muは、Web上の情報収集や長文読解を行うユーザーのために設
 - [x] コマンドパレット
 - [x] 垂直タブ (サイドバー)
 - [x] サイドバーのカスタマイズ (左右配置、自動隠蔽)
-- [ ] 広告ブロック機能
+- [x] 広告ブロック機能
 - [ ] モバイル対応 (iOS / Android)
 
 See the [open issues](https://github.com/ninjin-sirisiri/mu/issues) for a full list of proposed features (and known issues).
