@@ -12,8 +12,8 @@ pub use defaults::get_all_shortcuts;
 
 // Re-export registration functions
 pub use register::{
-  register_navigation_shortcuts, register_page_shortcuts, register_tab_shortcuts,
-  register_ui_shortcuts,
+  register_bookmark_shortcuts, register_navigation_shortcuts, register_page_shortcuts,
+  register_tab_shortcuts, register_ui_shortcuts,
 };
 
 #[cfg(test)]
@@ -139,15 +139,22 @@ mod tests {
     let nav_shortcuts = get_navigation_shortcuts();
     let ui_shortcuts = get_ui_shortcuts();
     let page_shortcuts = get_page_shortcuts();
+    let bookmark_shortcuts = get_bookmark_shortcuts();
 
     assert_eq!(
       all_shortcuts.len(),
-      tab_shortcuts.len() + nav_shortcuts.len() + ui_shortcuts.len() + page_shortcuts.len()
+      tab_shortcuts.len()
+        + nav_shortcuts.len()
+        + ui_shortcuts.len()
+        + page_shortcuts.len()
+        + bookmark_shortcuts.len()
     );
 
     let all_actions: Vec<_> = all_shortcuts.iter().map(|s| &s.action).collect();
     assert!(all_actions.contains(&&ShortcutAction::NewTab));
     assert!(all_actions.contains(&&ShortcutAction::CloseTab));
+    assert!(all_actions.contains(&&ShortcutAction::AddBookmark));
+    assert!(all_actions.contains(&&ShortcutAction::ToggleBookmarkPanel));
   }
 
   #[test]
@@ -188,5 +195,32 @@ mod tests {
     for shortcut in &shortcuts {
       assert_eq!(shortcut.category, ShortcutCategory::Page);
     }
+  }
+
+  #[test]
+  fn test_get_bookmark_shortcuts() {
+    let shortcuts = get_bookmark_shortcuts();
+    assert_eq!(shortcuts.len(), 2);
+
+    let actions: Vec<_> = shortcuts.iter().map(|s| &s.action).collect();
+    assert!(actions.contains(&&ShortcutAction::AddBookmark));
+    assert!(actions.contains(&&ShortcutAction::ToggleBookmarkPanel));
+  }
+
+  #[test]
+  fn test_bookmark_shortcut_categories() {
+    let shortcuts = get_bookmark_shortcuts();
+    for shortcut in &shortcuts {
+      assert_eq!(shortcut.category, ShortcutCategory::Bookmarks);
+    }
+  }
+
+  #[test]
+  fn test_bookmark_action_display() {
+    assert_eq!(ShortcutAction::AddBookmark.to_string(), "Add Bookmark");
+    assert_eq!(
+      ShortcutAction::ToggleBookmarkPanel.to_string(),
+      "Toggle Bookmark Panel"
+    );
   }
 }

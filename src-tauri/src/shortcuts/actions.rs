@@ -152,5 +152,17 @@ pub fn execute_action(app_handle: &AppHandle, action: &ShortcutAction) {
         log::info!("[Shortcuts] Executed: Show Help");
       }
     }
+    ShortcutAction::AddBookmark => {
+      // Emit event to sidebar to add current page as bookmark
+      // Requirements: 8.1
+      let _ = app_handle.emit_to("sidebar", "shortcut_add_bookmark", ());
+      log::info!("[Shortcuts] Executed: Add Bookmark");
+    }
+    ShortcutAction::ToggleBookmarkPanel => {
+      // Emit event to sidebar to toggle bookmark panel visibility
+      // Requirements: 8.2
+      let _ = app_handle.emit_to("sidebar", "shortcut_toggle_bookmark_panel", ());
+      log::info!("[Shortcuts] Executed: Toggle Bookmark Panel");
+    }
   }
 }

@@ -28,6 +28,10 @@ pub enum ShortcutAction {
   ZoomOut,
   ZoomReset,
   FindInPage,
+
+  // Bookmarks
+  AddBookmark,
+  ToggleBookmarkPanel,
 }
 
 impl fmt::Display for ShortcutAction {
@@ -50,6 +54,8 @@ impl fmt::Display for ShortcutAction {
       ShortcutAction::ZoomOut => write!(f, "Zoom Out"),
       ShortcutAction::ZoomReset => write!(f, "Zoom Reset"),
       ShortcutAction::FindInPage => write!(f, "Find in Page"),
+      ShortcutAction::AddBookmark => write!(f, "Add Bookmark"),
+      ShortcutAction::ToggleBookmarkPanel => write!(f, "Toggle Bookmark Panel"),
     }
   }
 }
@@ -111,6 +117,7 @@ pub enum ShortcutCategory {
   Tabs,
   Ui,
   Page,
+  Bookmarks,
 }
 
 impl fmt::Display for ShortcutCategory {
@@ -120,6 +127,7 @@ impl fmt::Display for ShortcutCategory {
       ShortcutCategory::Tabs => write!(f, "Tabs"),
       ShortcutCategory::Ui => write!(f, "UI"),
       ShortcutCategory::Page => write!(f, "Page"),
+      ShortcutCategory::Bookmarks => write!(f, "Bookmarks"),
     }
   }
 }

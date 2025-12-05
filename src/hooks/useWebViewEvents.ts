@@ -186,6 +186,25 @@ export function useWebViewEvents(viewType?: string): void {
           globalThis.dispatchEvent(new CustomEvent('toggle-sidebar'));
         });
         unlisteners.push(unlistenShortcutToggleSidebar);
+
+        // Ctrl+D - Add current page to bookmarks
+        // Requirements: 8.1
+        const unlistenShortcutAddBookmark = await listen('shortcut_add_bookmark', () => {
+          // Emit a custom event that the Sidebar component can listen to
+          globalThis.dispatchEvent(new CustomEvent('add-bookmark'));
+        });
+        unlisteners.push(unlistenShortcutAddBookmark);
+
+        // Ctrl+Shift+B - Toggle bookmark panel
+        // Requirements: 8.2
+        const unlistenShortcutToggleBookmarkPanel = await listen(
+          'shortcut_toggle_bookmark_panel',
+          () => {
+            // Emit a custom event that the Sidebar component can listen to
+            globalThis.dispatchEvent(new CustomEvent('toggle-bookmark-panel'));
+          }
+        );
+        unlisteners.push(unlistenShortcutToggleBookmarkPanel);
       }
     }
 

@@ -1,10 +1,32 @@
-import { ArrowLeft, ArrowRight, RotateCw, X, Minus, Square } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  RotateCw,
+  X,
+  Minus,
+  Square,
+  Bookmark,
+  BookmarkCheck
+} from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { useStoreValue } from '@simplestack/store/react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { addBookmark, deleteBookmark, bookmarkStore } from '../../store/bookmarkStore';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+
+async function showToast(
+  message: string,
+  type: 'success' | 'error' | 'info' | 'warning' = 'success'
+) {
+  try {
+    await invoke('show_toast', { message, toastType: type });
+  } catch {
+    // Silently ignore if toast webview is not available
+  }
+}
 
 function isValidUrl(input: string): boolean {
   const urlPattern = /^(https?:\/\/|www\.)|^[a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z]{2,})+/;
@@ -25,24 +47,87 @@ function formatUrl(input: string): string {
   return `https://www.google.com/search?q=${searchQuery}`;
 }
 
+type PageInfoEvent = {
+  title: string;
+  favicon: string | null;
+};
+
 export function NavigationControls() {
   const [url, setUrl] = useState('');
+  const [pageTitle, setPageTitle] = useState('');
+  const [pageFavicon, setPageFavicon] = useState<string | null>(null);
   const appWindow = getCurrentWindow();
+  const bookmarkState = useStoreValue(bookmarkStore);
+
+  // Check if current URL is bookmarked and get the bookmark if it exists
+  const currentBookmark = bookmarkState.bookmarks.find(b => b.url === url);
+  const isBookmarked = !!currentBookmark;
 
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
+    let unlistenNav: (() => void) | undefined;
+    let unlistenTitle: (() => void) | undefined;
+    let unlistenPageInfo: (() => void) | undefined;
     (async () => {
-      unlisten = await listen<string>('content_navigation', event => {
-        setUrl(event.payload);
+      unlistenNav = await listen<{ url: string }>('navigation', event => {
+        setUrl(event.payload.url);
+        // Reset page info when navigating to a new page
+        setPageTitle('');
+        setPageFavicon(null);
+      });
+      unlistenTitle = await listen<string>('content_title_changed', event => {
+        setPageTitle(event.payload);
+      });
+      unlistenPageInfo = await listen<PageInfoEvent>('page_info', event => {
+        setPageTitle(event.payload.title);
+        setPageFavicon(event.payload.favicon);
       });
     })();
 
     return () => {
-      if (unlisten) {
-        unlisten();
+      if (unlistenNav) {
+        unlistenNav();
+      }
+      if (unlistenTitle) {
+        unlistenTitle();
+      }
+      if (unlistenPageInfo) {
+        unlistenPageInfo();
       }
     };
   }, []);
+
+  /**
+   * Handle toggling bookmark for current page
+   * Requirements: 1.1, 1.4
+   */
+  const handleToggleBookmark = useCallback(async () => {
+    if (!url) return;
+    if (currentBookmark) {
+      const success = await deleteBookmark(currentBookmark.id);
+      if (success) {
+        showToast('Bookmark removed', 'error');
+      }
+    } else {
+      const title = pageTitle || url;
+      const bookmark = await addBookmark(url, title, pageFavicon ?? undefined);
+      if (bookmark) {
+        showToast('Bookmark added', 'success');
+      }
+    }
+  }, [url, pageTitle, pageFavicon, currentBookmark]);
+
+  // Listen for add-bookmark shortcut event (Ctrl+D)
+  // Requirements: 8.1
+  useEffect(() => {
+    function handleBookmarkShortcut() {
+      handleToggleBookmark();
+    }
+
+    globalThis.addEventListener('add-bookmark', handleBookmarkShortcut);
+    return () => {
+      globalThis.removeEventListener('add-bookmark', handleBookmarkShortcut);
+    };
+  }, [handleToggleBookmark]);
 
   async function handleBack() {
     await invoke('go_back');
@@ -102,6 +187,22 @@ export function NavigationControls() {
           onClick={handleRefresh}
           className="text-gray-400 hover:text-gray-100 hover:bg-gray-700/50">
           <RotateCw size={18} />
+        </Button>
+        {/* Toggle Bookmark button - Requirements: 1.1, 1.4 */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleToggleBookmark}
+          disabled={!url}
+          className={`transition-colors ${
+            isBookmarked
+              ? 'text-yellow-400 hover:text-yellow-300 hover:bg-gray-700/50'
+              : 'text-gray-400 hover:text-gray-100 hover:bg-gray-700/50'
+          }`}
+          title={isBookmarked ? 'Remove bookmark (Ctrl+D)' : 'Add bookmark (Ctrl+D)'}
+          aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+          data-testid="toggle-bookmark-button">
+          {isBookmarked ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
         </Button>
       </div>
 

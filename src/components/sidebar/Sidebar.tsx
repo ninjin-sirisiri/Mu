@@ -1,8 +1,13 @@
-import { PanelLeft, Settings } from 'lucide-react';
+import { PanelLeft, Settings, Bookmark } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { addBookmark } from '../../store/bookmarkStore';
 import { openSettingsPanel } from '../../store/settingsStore';
+import { getActiveTab } from '../../store/tabStore';
+import { ConnectedBookmarkList } from '../bookmarks';
 import { ConnectedTabList } from '../tabs';
+
+export type SidebarView = 'tabs' | 'bookmarks';
 
 export type SidebarPosition = 'left' | 'right';
 export type SidebarMode = 'fixed' | 'auto-hide';
@@ -38,6 +43,7 @@ export function Sidebar({
   onSettingsClick
 }: SidebarProps) {
   const [isVisible, setIsVisible] = useState(mode === 'fixed');
+  const [activeView, setActiveView] = useState<SidebarView>('tabs');
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Update WebView width when visibility changes
@@ -149,6 +155,47 @@ export function Sidebar({
     };
   }, [onVisibilityChange]);
 
+  // Listen for toggle bookmark panel shortcut event (Ctrl+Shift+B)
+  // Requirements: 8.2
+  useEffect(() => {
+    function handleToggleBookmarkPanel() {
+      // If sidebar is visible, toggle between tabs and bookmarks
+      if (isVisible) {
+        setActiveView(prev => (prev === 'bookmarks' ? 'tabs' : 'bookmarks'));
+      } else {
+        // If sidebar is hidden, show it and switch to bookmarks
+        setIsVisible(true);
+        onVisibilityChange?.(true);
+        setActiveView('bookmarks');
+      }
+    }
+
+    globalThis.addEventListener('toggle-bookmark-panel', handleToggleBookmarkPanel);
+    return () => {
+      globalThis.removeEventListener('toggle-bookmark-panel', handleToggleBookmarkPanel);
+    };
+  }, [isVisible, onVisibilityChange]);
+
+  // Listen for add bookmark shortcut event (Ctrl+D)
+  // Requirements: 8.1
+  useEffect(() => {
+    async function handleAddBookmark() {
+      const activeTab = getActiveTab();
+      if (activeTab?.url) {
+        await addBookmark(
+          activeTab.url,
+          activeTab.title || activeTab.url,
+          activeTab.favicon ?? undefined
+        );
+      }
+    }
+
+    globalThis.addEventListener('add-bookmark', handleAddBookmark);
+    return () => {
+      globalThis.removeEventListener('add-bookmark', handleAddBookmark);
+    };
+  }, []);
+
   // Shadow direction based on position
   const shadowClass =
     position === 'left'
@@ -202,11 +249,35 @@ export function Sidebar({
           opacity: isVisible ? 1 : 0
         }}>
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-700/50 bg-gray-900/50">
-            <div className="flex items-center gap-2">
-              <PanelLeft className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-semibold text-gray-200 tracking-wide">Tabs</span>
+          {/* Header with view tabs - Requirements: 2.1 */}
+          <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-700/50 bg-gray-900/50">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setActiveView('tabs')}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  activeView === 'tabs'
+                    ? 'bg-gray-700/70 text-gray-100'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/40'
+                }`}
+                aria-label="View tabs"
+                data-testid="sidebar-tabs-button"
+                title="Tabs">
+                <PanelLeft className="w-4 h-4" />
+                <span>Tabs</span>
+              </button>
+              <button
+                onClick={() => setActiveView('bookmarks')}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  activeView === 'bookmarks'
+                    ? 'bg-gray-700/70 text-gray-100'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/40'
+                }`}
+                aria-label="View bookmarks"
+                data-testid="sidebar-bookmarks-button"
+                title="Bookmarks">
+                <Bookmark className="w-4 h-4" />
+                <span>Bookmarks</span>
+              </button>
             </div>
             {onSettingsClick && (
               <button
@@ -220,12 +291,12 @@ export function Sidebar({
             )}
           </div>
 
-          {/* Content area - either children or default tab list with footer */}
+          {/* Content area - either children or default view with footer */}
           {children || (
             <>
-              {/* Tab List */}
+              {/* Content based on active view - Requirements: 2.1 */}
               <div className="flex-1 overflow-hidden">
-                <ConnectedTabList />
+                {activeView === 'tabs' ? <ConnectedTabList /> : <ConnectedBookmarkList />}
               </div>
 
               {/* Footer with subtle branding and settings button */}

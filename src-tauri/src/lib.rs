@@ -1,4 +1,5 @@
 mod adblocker;
+mod bookmarks;
 mod commands;
 mod events;
 mod settings;
@@ -8,13 +9,14 @@ mod state;
 mod utils;
 
 use commands::{
-  add_to_allowlist, close_tab, create_tab, fetch_page_title, find_in_page, get_adblocker_settings,
-  get_allowlist, get_block_stats, get_shortcut_list, get_sidebar_settings, get_tab_info,
-  get_zoom_level, go_back, go_forward, hide_help, hide_new_tab_dialog, hide_settings, navigate,
-  navigate_to, persist_block_count, reload, remove_from_allowlist, save_sidebar_settings,
-  set_adblocker_enabled, set_content_layout, set_sidebar_position, set_sidebar_width,
-  set_topnav_height, show_help, show_new_tab_dialog, show_settings, stop_loading, switch_tab,
-  toggle_fullscreen, toggle_sidebar, zoom_in, zoom_out, zoom_reset,
+  add_bookmark, add_to_allowlist, bookmark_exists, close_tab, create_tab, delete_bookmark,
+  fetch_page_title, find_in_page, get_adblocker_settings, get_all_bookmarks, get_allowlist,
+  get_block_stats, get_shortcut_list, get_sidebar_settings, get_tab_info, get_zoom_level, go_back,
+  go_forward, hide_help, hide_new_tab_dialog, hide_settings, navigate, navigate_to,
+  persist_block_count, reload, remove_from_allowlist, save_sidebar_settings, set_adblocker_enabled,
+  set_content_layout, set_sidebar_position, set_sidebar_width, set_topnav_height, show_help,
+  show_new_tab_dialog, show_settings, show_toast, stop_loading, switch_tab, toggle_fullscreen,
+  toggle_sidebar, update_bookmark_title, zoom_in, zoom_out, zoom_reset,
 };
 use setup::{
   create_main_window, create_webviews, initialize_app_state, setup_window_resize_handler,
@@ -58,6 +60,12 @@ pub fn run() {
       get_allowlist,
       get_block_stats,
       persist_block_count,
+      // Bookmark commands
+      get_all_bookmarks,
+      add_bookmark,
+      delete_bookmark,
+      update_bookmark_title,
+      bookmark_exists,
       // Shortcut commands
       toggle_sidebar,
       toggle_fullscreen,
@@ -71,7 +79,9 @@ pub fn run() {
       // Help overlay
       show_help,
       hide_help,
-      get_shortcut_list
+      get_shortcut_list,
+      // Toast notifications
+      show_toast
     ])
     .setup(|app| {
       // Initialize app state (database, settings, ad blocker)
@@ -105,17 +115,13 @@ pub fn run() {
       if let Err(e) = shortcuts::register_page_shortcuts(app.handle()) {
         log::error!("[Shortcuts] Failed to register page shortcuts: {}", e);
       }
+      // Register bookmark shortcuts (Requirements: 8.1, 8.2)
+      if let Err(e) = shortcuts::register_bookmark_shortcuts(app.handle()) {
+        log::error!("[Shortcuts] Failed to register bookmark shortcuts: {}", e);
+      }
 
       // Set up window resize handler
-      setup_window_resize_handler(
-        &window,
-        webviews.topnav,
-        webviews.sidebar,
-        webviews.dialog,
-        webviews.settings,
-        webviews.help,
-        app.handle().clone(),
-      );
+      setup_window_resize_handler(&window, webviews, app.handle().clone());
 
       Ok(())
     })

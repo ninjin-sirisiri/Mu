@@ -3,6 +3,7 @@ export {
   computeSidebarVisibility,
   type SidebarProps,
   type SidebarPosition,
-  type SidebarMode
+  type SidebarMode,
+  type SidebarView
 } from './Sidebar';
 export { ConnectedSidebar } from './ConnectedSidebar';

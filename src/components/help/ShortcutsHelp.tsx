@@ -6,7 +6,7 @@ import { invoke } from '@tauri-apps/api/core';
 /**
  * Shortcut category type matching Rust enum
  */
-type ShortcutCategory = 'navigation' | 'tabs' | 'ui' | 'page';
+type ShortcutCategory = 'navigation' | 'tabs' | 'ui' | 'page' | 'bookmarks';
 
 /**
  * Shortcut info from Rust backend
@@ -24,7 +24,8 @@ const categoryConfig: Record<ShortcutCategory, { title: string; order: number }>
   navigation: { title: 'Navigation', order: 1 },
   tabs: { title: 'Tabs', order: 2 },
   ui: { title: 'UI', order: 3 },
-  page: { title: 'Page', order: 4 }
+  page: { title: 'Page', order: 4 },
+  bookmarks: { title: 'Bookmarks', order: 5 }
 };
 
 /**

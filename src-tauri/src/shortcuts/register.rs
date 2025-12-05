@@ -1,6 +1,7 @@
 use super::actions::execute_action;
 use super::defaults::{
-  get_navigation_shortcuts, get_page_shortcuts, get_tab_shortcuts, get_ui_shortcuts,
+  get_bookmark_shortcuts, get_navigation_shortcuts, get_page_shortcuts, get_tab_shortcuts,
+  get_ui_shortcuts,
 };
 use super::platform::to_platform_shortcut;
 use super::types::{Modifier, ShortcutConfig};
@@ -79,6 +80,13 @@ pub fn register_ui_shortcuts(app_handle: &AppHandle) -> Result<(), String> {
 /// Register all page interaction shortcuts
 pub fn register_page_shortcuts(app_handle: &AppHandle) -> Result<(), String> {
   let shortcuts = get_page_shortcuts();
+  register_shortcuts_from_configs(app_handle, &shortcuts)
+}
+
+/// Register all bookmark shortcuts
+/// Requirements: 8.1, 8.2
+pub fn register_bookmark_shortcuts(app_handle: &AppHandle) -> Result<(), String> {
+  let shortcuts = get_bookmark_shortcuts();
   register_shortcuts_from_configs(app_handle, &shortcuts)
 }
 

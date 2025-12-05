@@ -1,6 +1,7 @@
 use tauri::Manager;
 
 use crate::settings::SidebarPosition;
+use crate::setup::webviews::WebviewHandles;
 use crate::state::AppState;
 
 /// Create the main application window
@@ -21,18 +22,15 @@ pub fn create_main_window(app: &tauri::App) -> Result<tauri::Window, Box<dyn std
 /// Set up the window resize handler to update UI webview sizes
 pub fn setup_window_resize_handler(
   window: &tauri::Window,
-  topnav_webview: tauri::Webview,
-  sidebar_webview: tauri::Webview,
-  dialog_webview: tauri::Webview,
-  settings_webview: tauri::Webview,
-  help_webview: tauri::Webview,
+  webviews: WebviewHandles,
   app_handle: tauri::AppHandle,
 ) {
-  let topnav_handle = topnav_webview;
-  let sidebar_handle = sidebar_webview;
-  let dialog_handle = dialog_webview;
-  let settings_handle = settings_webview;
-  let help_handle = help_webview;
+  let topnav_handle = webviews.topnav;
+  let sidebar_handle = webviews.sidebar;
+  let dialog_handle = webviews.dialog;
+  let settings_handle = webviews.settings;
+  let help_handle = webviews.help;
+  let toast_handle = webviews.toast;
 
   window.on_window_event(move |event| {
     if let tauri::WindowEvent::Resized(size) = event {
@@ -93,6 +91,13 @@ pub fn setup_window_resize_handler(
           size.height,
         )));
       }
+
+      // Update toast position to stay at bottom-right
+      let toast_width = 400u32;
+      let toast_height = 150u32;
+      let x_position = size.width.saturating_sub(toast_width);
+      let y_position = size.height.saturating_sub(toast_height);
+      let _ = toast_handle.set_position(tauri::PhysicalPosition::new(x_position, y_position));
     }
   });
 }

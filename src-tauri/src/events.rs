@@ -35,3 +35,11 @@ pub struct NavigationEvent {
 pub struct NewTabEvent {
   pub url: String,
 }
+
+/// Event payload for toast notifications
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToastEvent {
+  pub message: String,
+  #[serde(rename = "type")]
+  pub toast_type: String, // "success", "error", "info", "warning"
+}

@@ -7,7 +7,7 @@ import { ShortcutsHelp } from './components/help';
 import { TopNavBar } from './components/navigation';
 import { SettingsView } from './components/settings';
 import { ConnectedSidebar } from './components/sidebar';
-import { Toaster } from './components/ui/sonner';
+import { ToastView } from './components/toast';
 import { useShortcutPrevention } from './hooks/useShortcutPrevention';
 import { useWebViewEvents } from './hooks/useWebViewEvents';
 import './index.css';
@@ -19,7 +19,7 @@ const TRIGGER_TOP = 8;
 const TOPNAV_HEIGHT = 56;
 
 // Get view type from URL parameter
-function getViewType(): 'topnav' | 'sidebar' | 'dialog' | 'settings' | 'help' | 'full' {
+function getViewType(): 'topnav' | 'sidebar' | 'dialog' | 'settings' | 'help' | 'toast' | 'full' {
   const params = new URLSearchParams(globalThis.location.search);
   const view = params.get('view');
   if (view === 'topnav') return 'topnav';
@@ -27,6 +27,7 @@ function getViewType(): 'topnav' | 'sidebar' | 'dialog' | 'settings' | 'help' | 
   if (view === 'dialog') return 'dialog';
   if (view === 'settings') return 'settings';
   if (view === 'help') return 'help';
+  if (view === 'toast') return 'toast';
   return 'full';
 }
 
@@ -138,7 +139,6 @@ export default function App() {
   if (viewType === 'topnav') {
     return (
       <div className="relative w-full h-screen">
-        <Toaster />
         <TopNavBar
           hideDelay={300}
           triggerZoneHeight={TRIGGER_TOP}
@@ -154,7 +154,6 @@ export default function App() {
     if (isSettingsLoading) {
       return (
         <div className="relative w-full h-screen bg-gray-900">
-          <Toaster />
           <div className="flex items-center justify-center h-full">
             <div className="text-gray-500 text-sm">Loading...</div>
           </div>
@@ -166,7 +165,6 @@ export default function App() {
     // Requirements: 4.3
     return (
       <div className="relative w-full h-screen">
-        <Toaster />
         <ConnectedSidebar />
       </div>
     );
@@ -175,7 +173,6 @@ export default function App() {
   if (viewType === 'dialog') {
     return (
       <div className="relative w-full h-screen">
-        <Toaster />
         <NewTabModal />
       </div>
     );
@@ -184,7 +181,6 @@ export default function App() {
   if (viewType === 'settings') {
     return (
       <div className="relative w-full h-screen">
-        <Toaster />
         <SettingsView />
       </div>
     );
@@ -193,16 +189,18 @@ export default function App() {
   if (viewType === 'help') {
     return (
       <div className="relative w-full h-screen">
-        <Toaster />
         <ShortcutsHelp />
       </div>
     );
   }
 
+  if (viewType === 'toast') {
+    return <ToastView />;
+  }
+
   // Full view (fallback, not used in current architecture)
   return (
     <div className="relative w-full h-screen pointer-events-none">
-      <Toaster />
       <TopNavBar
         hideDelay={300}
         triggerZoneHeight={TRIGGER_TOP}

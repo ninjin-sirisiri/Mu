@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use tauri::Manager;
 
 use crate::adblocker::AdBlockerState;
+use crate::bookmarks::{BookmarkDb, init_database as init_bookmark_database};
 use crate::settings::{
   SettingsDb, get_adblocker_settings as db_get_adblocker_settings, get_sidebar_settings,
   init_database,
@@ -56,6 +57,21 @@ pub fn initialize_app_state(app: &tauri::App) -> Result<(), Box<dyn std::error::
 
   app.manage(adblocker_state);
   app.manage(settings_db);
+
+  // Initialize bookmarks database
+  let bookmark_db = match init_bookmark_database() {
+    Ok(db) => Arc::new(db),
+    Err(e) => {
+      log::error!("Failed to initialize bookmarks database: {}", e);
+      // Create an in-memory database as fallback
+      let conn =
+        rusqlite::Connection::open_in_memory().expect("Failed to create in-memory database");
+      let db = BookmarkDb::new(conn);
+      db.init_table().expect("Failed to create bookmarks table");
+      Arc::new(db)
+    }
+  };
+  app.manage(bookmark_db);
 
   Ok(())
 }

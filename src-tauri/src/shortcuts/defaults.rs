@@ -218,6 +218,29 @@ pub fn get_page_shortcuts() -> Vec<ShortcutConfig> {
   ]
 }
 
+/// Get the default bookmark shortcuts
+/// Requirements: 8.1, 8.2
+pub fn get_bookmark_shortcuts() -> Vec<ShortcutConfig> {
+  vec![
+    ShortcutConfig::new(
+      "add_bookmark",
+      "D",
+      vec![Modifier::Ctrl],
+      ShortcutAction::AddBookmark,
+      "Add current page to bookmarks",
+      ShortcutCategory::Bookmarks,
+    ),
+    ShortcutConfig::new(
+      "toggle_bookmark_panel",
+      "B",
+      vec![Modifier::Ctrl, Modifier::Shift],
+      ShortcutAction::ToggleBookmarkPanel,
+      "Toggle bookmark panel",
+      ShortcutCategory::Bookmarks,
+    ),
+  ]
+}
+
 /// Get all default shortcuts
 pub fn get_all_shortcuts() -> Vec<ShortcutConfig> {
   let mut shortcuts = Vec::new();
@@ -225,5 +248,6 @@ pub fn get_all_shortcuts() -> Vec<ShortcutConfig> {
   shortcuts.extend(get_tab_shortcuts());
   shortcuts.extend(get_ui_shortcuts());
   shortcuts.extend(get_page_shortcuts());
+  shortcuts.extend(get_bookmark_shortcuts());
   shortcuts
 }

@@ -4,14 +4,9 @@ import { invoke } from '@tauri-apps/api/core';
 import {
   settingsStore,
   openSettingsPanel,
-  closeSettingsPanel,
-  setSidebarPosition,
-  setSidebarMode,
   type SidebarPosition,
   type SidebarMode
 } from '../../store/settingsStore';
-import { SettingsPanel } from '../settings';
-import { ConnectedTabList } from '../tabs';
 import { Sidebar } from './Sidebar';
 
 /**
@@ -22,13 +17,11 @@ export function ConnectedSidebar() {
   const settingsState = useStoreValue(settingsStore);
   const position = settingsState?.sidebar?.position ?? 'left';
   const mode = settingsState?.sidebar?.mode ?? 'auto-hide';
-  const isSettingsPanelOpen = settingsState?.isSettingsPanelOpen ?? false;
 
   return (
     <ConnectedSidebarInner
       position={position}
       mode={mode}
-      isSettingsPanelOpen={isSettingsPanelOpen}
     />
   );
 }
@@ -36,18 +29,13 @@ export function ConnectedSidebar() {
 type ConnectedSidebarInnerProps = {
   position: SidebarPosition;
   mode: SidebarMode;
-  isSettingsPanelOpen: boolean;
 };
 
 /**
  * Inner component to handle settings panel integration
- * Requirements: 4.1, 4.4
+ * Requirements: 4.1, 4.4, 2.1
  */
-function ConnectedSidebarInner({
-  position,
-  mode,
-  isSettingsPanelOpen
-}: ConnectedSidebarInnerProps) {
+function ConnectedSidebarInner({ position, mode }: ConnectedSidebarInnerProps) {
   const handleOpenSettings = useCallback(async () => {
     try {
       await invoke('show_settings');
@@ -57,41 +45,12 @@ function ConnectedSidebarInner({
     }
   }, []);
 
-  const handleCloseSettings = useCallback(() => {
-    closeSettingsPanel();
-  }, []);
-
-  const handlePositionChange = useCallback((newPosition: SidebarPosition) => {
-    setSidebarPosition(newPosition);
-  }, []);
-
-  const handleModeChange = useCallback((newMode: SidebarMode) => {
-    setSidebarMode(newMode);
-  }, []);
-
+  // Let Sidebar handle the default content with tab/bookmark switching
   return (
     <Sidebar
       position={position}
       mode={mode}
-      onSettingsClick={handleOpenSettings}>
-      <>
-        {/* Tab List */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <ConnectedTabList />
-        </div>
-
-        {/* Settings Panel */}
-        <div className="flex-shrink-0">
-          <SettingsPanel
-            isOpen={isSettingsPanelOpen}
-            onClose={handleCloseSettings}
-            position={position}
-            mode={mode}
-            onPositionChange={handlePositionChange}
-            onModeChange={handleModeChange}
-          />
-        </div>
-      </>
-    </Sidebar>
+      onSettingsClick={handleOpenSettings}
+    />
   );
 }

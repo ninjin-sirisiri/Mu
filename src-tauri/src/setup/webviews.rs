@@ -14,6 +14,7 @@ pub struct WebviewHandles {
   pub dialog: tauri::Webview,
   pub settings: tauri::Webview,
   pub help: tauri::Webview,
+  pub toast: tauri::Webview,
 }
 
 /// Create all webviews for the application
@@ -135,11 +136,27 @@ pub fn create_webviews(
     tauri::Size::Physical(tauri::PhysicalSize::new(0, 0)),
   )?;
 
+  // Toast Webview (always visible, positioned at bottom-right, transparent for click-through)
+  let toast_width = 400u32;
+  let toast_height = 150u32;
+  let toast_x = size.width.saturating_sub(toast_width);
+  let toast_y = size.height.saturating_sub(toast_height);
+  let toast_webview = window.add_child(
+    tauri::webview::WebviewBuilder::new(
+      "toast",
+      tauri::WebviewUrl::App("index.html?view=toast".into()),
+    )
+    .transparent(true),
+    tauri::PhysicalPosition::new(toast_x, toast_y),
+    tauri::Size::Physical(tauri::PhysicalSize::new(toast_width, toast_height)),
+  )?;
+
   Ok(WebviewHandles {
     topnav: topnav_webview,
     sidebar: sidebar_webview,
     dialog: dialog_webview,
     settings: settings_webview,
     help: help_webview,
+    toast: toast_webview,
   })
 }
