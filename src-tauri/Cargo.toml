@@ -26,7 +26,6 @@ tauri-plugin-log = "2.7.1"
 uuid = { version = "1.11", features = ["v4"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 directories = "5.0"
-tauri-plugin-global-shortcut = "2"
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.36"

@@ -10,13 +10,14 @@ mod utils;
 
 use commands::{
   add_bookmark, add_to_allowlist, bookmark_exists, close_tab, create_tab, delete_bookmark,
-  fetch_page_title, find_in_page, get_adblocker_settings, get_all_bookmarks, get_allowlist,
-  get_block_stats, get_shortcut_list, get_sidebar_settings, get_tab_info, get_zoom_level, go_back,
-  go_forward, hide_help, hide_new_tab_dialog, hide_settings, navigate, navigate_to,
-  persist_block_count, reload, remove_from_allowlist, save_sidebar_settings, set_adblocker_enabled,
-  set_content_layout, set_sidebar_position, set_sidebar_width, set_topnav_height, show_help,
-  show_new_tab_dialog, show_settings, show_toast, stop_loading, switch_tab, toggle_fullscreen,
-  toggle_sidebar, update_bookmark_title, zoom_in, zoom_out, zoom_reset,
+  execute_shortcut_action, fetch_page_title, find_in_page, get_adblocker_settings,
+  get_all_bookmarks, get_allowlist, get_block_stats, get_shortcut_list, get_sidebar_settings,
+  get_tab_info, get_zoom_level, go_back, go_forward, hide_help, hide_new_tab_dialog, hide_settings,
+  navigate, navigate_to, persist_block_count, reload, remove_from_allowlist, save_sidebar_settings,
+  set_adblocker_enabled, set_content_layout, set_sidebar_position, set_sidebar_width,
+  set_topnav_height, show_help, show_new_tab_dialog, show_settings, show_toast, stop_loading,
+  switch_tab, toggle_fullscreen, toggle_sidebar, update_bookmark_title, zoom_in, zoom_out,
+  zoom_reset,
 };
 use setup::{
   create_main_window, create_webviews, initialize_app_state, setup_window_resize_handler,
@@ -29,7 +30,6 @@ pub use utils::normalize_url;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
-    .plugin(tauri_plugin_global_shortcut::Builder::new().build())
     .invoke_handler(tauri::generate_handler![
       navigate,
       navigate_to,
@@ -81,7 +81,9 @@ pub fn run() {
       hide_help,
       get_shortcut_list,
       // Toast notifications
-      show_toast
+      show_toast,
+      // Shortcut action execution (app-scoped shortcuts)
+      execute_shortcut_action
     ])
     .setup(|app| {
       // Initialize app state (database, settings, ad blocker)
@@ -102,23 +104,8 @@ pub fn run() {
       // Create all webviews
       let webviews = create_webviews(&window)?;
 
-      // Register keyboard shortcuts
-      if let Err(e) = shortcuts::register_navigation_shortcuts(app.handle()) {
-        log::error!("[Shortcuts] Failed to register navigation shortcuts: {}", e);
-      }
-      if let Err(e) = shortcuts::register_tab_shortcuts(app.handle()) {
-        log::error!("[Shortcuts] Failed to register tab shortcuts: {}", e);
-      }
-      if let Err(e) = shortcuts::register_ui_shortcuts(app.handle()) {
-        log::error!("[Shortcuts] Failed to register UI shortcuts: {}", e);
-      }
-      if let Err(e) = shortcuts::register_page_shortcuts(app.handle()) {
-        log::error!("[Shortcuts] Failed to register page shortcuts: {}", e);
-      }
-      // Register bookmark shortcuts (Requirements: 8.1, 8.2)
-      if let Err(e) = shortcuts::register_bookmark_shortcuts(app.handle()) {
-        log::error!("[Shortcuts] Failed to register bookmark shortcuts: {}", e);
-      }
+      // Note: Keyboard shortcuts are now handled in the frontend via useKeyboardShortcuts hook
+      // This allows shortcuts to work only when the app is focused (not global)
 
       // Set up window resize handler
       setup_window_resize_handler(&window, webviews, app.handle().clone());

@@ -28,13 +28,19 @@ pub fn show_new_tab_dialog(app_handle: tauri::AppHandle) -> Result<(), String> {
   }
 }
 
-/// Hides the new tab dialog WebView
+/// Hides the new tab dialog WebView and returns focus to content
 #[tauri::command]
 pub fn hide_new_tab_dialog(app_handle: tauri::AppHandle) -> Result<(), String> {
   if let Some(webview) = app_handle.get_webview("dialog") {
     webview
       .set_size(tauri::LogicalSize::new(0.0, 0.0))
       .map_err(|e| format!("Failed to hide dialog: {}", e))?;
+
+    // Return focus to content WebView
+    if let Some(content) = app_handle.get_webview("content") {
+      let _ = content.set_focus();
+    }
+
     Ok(())
   } else {
     Err("Dialog webview not found".to_string())
@@ -54,6 +60,11 @@ pub fn navigate_to(app_handle: tauri::AppHandle, url: String) -> Result<(), Stri
   // Hide dialog first
   if let Some(dialog) = app_handle.get_webview("dialog") {
     let _ = dialog.set_size(tauri::LogicalSize::new(0.0, 0.0));
+  }
+
+  // Return focus to content WebView
+  if let Some(content) = app_handle.get_webview("content") {
+    let _ = content.set_focus();
   }
 
   // Emit event to sidebar to create new tab (only sidebar listens for this)

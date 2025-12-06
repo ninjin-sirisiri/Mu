@@ -1,6 +1,7 @@
 use super::types::{Modifier, ShortcutConfig};
 
 /// Platform detection for modifier key mapping
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Platform {
   MacOS,
@@ -8,6 +9,7 @@ pub enum Platform {
   Linux,
 }
 
+#[allow(dead_code)]
 impl Platform {
   /// Detect the current platform at runtime
   pub fn current() -> Self {
@@ -29,6 +31,7 @@ impl Platform {
 /// Convert a Ctrl modifier to the platform-appropriate modifier
 /// On macOS, Ctrl becomes Cmd (Meta)
 /// On Windows/Linux, Ctrl remains Ctrl
+#[allow(dead_code)]
 pub fn platform_modifier(modifier: Modifier) -> Modifier {
   match modifier {
     Modifier::Ctrl if Platform::is_macos() => Modifier::Meta,
@@ -37,11 +40,13 @@ pub fn platform_modifier(modifier: Modifier) -> Modifier {
 }
 
 /// Convert modifiers to platform-appropriate modifiers
+#[allow(dead_code)]
 pub fn platform_modifiers(modifiers: &[Modifier]) -> Vec<Modifier> {
   modifiers.iter().map(|m| platform_modifier(*m)).collect()
 }
 
 /// Convert a shortcut config to use platform-appropriate modifiers
+#[allow(dead_code)]
 pub fn to_platform_shortcut(config: &ShortcutConfig) -> ShortcutConfig {
   ShortcutConfig {
     id: config.id.clone(),

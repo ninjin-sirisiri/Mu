@@ -27,13 +27,19 @@ pub fn show_settings(app_handle: tauri::AppHandle) -> Result<(), String> {
   }
 }
 
-/// Hides the settings WebView
+/// Hides the settings WebView and returns focus to content
 #[tauri::command]
 pub fn hide_settings(app_handle: tauri::AppHandle) -> Result<(), String> {
   if let Some(webview) = app_handle.get_webview("settings") {
     webview
       .set_size(tauri::LogicalSize::new(0.0, 0.0))
       .map_err(|e| format!("Failed to hide settings: {}", e))?;
+
+    // Return focus to content WebView
+    if let Some(content) = app_handle.get_webview("content") {
+      let _ = content.set_focus();
+    }
+
     Ok(())
   } else {
     Err("Settings webview not found".to_string())

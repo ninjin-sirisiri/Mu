@@ -8,7 +8,7 @@ import { TopNavBar } from './components/navigation';
 import { SettingsView } from './components/settings';
 import { ConnectedSidebar } from './components/sidebar';
 import { ToastView } from './components/toast';
-import { useShortcutPrevention } from './hooks/useShortcutPrevention';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useWebViewEvents } from './hooks/useWebViewEvents';
 import './index.css';
 import { settingsStore, loadSettings, listenForSettingsChanges } from './store/settingsStore';
@@ -47,9 +47,9 @@ export default function App() {
   // Requirements: 5.1, 5.2, 5.3, 5.5
   useWebViewEvents(viewType);
 
-  // Prevent default browser behavior for registered shortcuts
+  // Handle keyboard shortcuts within the app (app-scoped, not global)
   // Requirements: 6.3 - WHEN a shortcut is triggered THEN Mu SHALL prevent the default browser behavior
-  useShortcutPrevention();
+  useKeyboardShortcuts();
 
   // Subscribe to tab store to react to active tab changes
   const tabState = useStoreValue(tabStore);

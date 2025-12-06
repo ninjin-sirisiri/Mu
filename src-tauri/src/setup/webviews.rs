@@ -30,6 +30,7 @@ pub fn create_webviews(
       WebviewUrl::External("https://google.com".parse().unwrap()),
     )
     .auto_resize()
+    .initialization_script(include_str!("content_shortcuts.js"))
     .on_page_load(|webview, payload| {
       use tauri::webview::PageLoadEvent as TauriPageLoadEvent;
 

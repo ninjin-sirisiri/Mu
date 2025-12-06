@@ -1,7 +1,6 @@
-mod actions;
+pub mod actions;
 mod defaults;
 mod platform;
-mod register;
 mod types;
 
 // Re-export types
@@ -10,11 +9,9 @@ pub use types::ShortcutInfo;
 // Re-export default shortcuts
 pub use defaults::get_all_shortcuts;
 
-// Re-export registration functions
-pub use register::{
-  register_bookmark_shortcuts, register_navigation_shortcuts, register_page_shortcuts,
-  register_tab_shortcuts, register_ui_shortcuts,
-};
+// Re-export action execution for commands
+pub use actions::execute_action;
+pub use types::ShortcutAction;
 
 #[cfg(test)]
 mod tests {

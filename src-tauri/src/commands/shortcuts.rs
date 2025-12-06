@@ -1,4 +1,5 @@
 use crate::settings::SidebarPosition;
+use crate::shortcuts::{ShortcutAction, execute_action};
 use crate::state::{AppState, DEFAULT_ZOOM_LEVEL, MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP};
 use tauri::{Emitter, Manager, Window};
 
@@ -242,7 +243,7 @@ pub fn show_help(app_handle: tauri::AppHandle) -> Result<(), String> {
   }
 }
 
-/// Hide the help overlay WebView
+/// Hide the help overlay WebView and return focus to content
 /// Requirements: 7.3
 #[tauri::command]
 pub fn hide_help(app_handle: tauri::AppHandle) -> Result<(), String> {
@@ -250,6 +251,12 @@ pub fn hide_help(app_handle: tauri::AppHandle) -> Result<(), String> {
     webview
       .set_size(tauri::LogicalSize::new(0.0, 0.0))
       .map_err(|e| format!("Failed to hide help: {}", e))?;
+
+    // Return focus to content WebView
+    if let Some(content) = app_handle.get_webview("content") {
+      let _ = content.set_focus();
+    }
+
     log::info!("[Shortcuts] Hid help overlay");
     Ok(())
   } else {
@@ -264,4 +271,41 @@ pub fn get_shortcut_list() -> Vec<crate::shortcuts::ShortcutInfo> {
   use crate::shortcuts::{ShortcutInfo, get_all_shortcuts};
 
   get_all_shortcuts().iter().map(ShortcutInfo::from).collect()
+}
+
+/// Execute a shortcut action from the frontend
+/// This replaces global shortcuts with app-scoped shortcuts
+#[tauri::command]
+pub fn execute_shortcut_action(app_handle: tauri::AppHandle, action: String) -> Result<(), String> {
+  let shortcut_action = match action.as_str() {
+    "go_back" => ShortcutAction::GoBack,
+    "go_forward" => ShortcutAction::GoForward,
+    "reload" => ShortcutAction::Reload,
+    "stop_loading" => ShortcutAction::StopLoading,
+    "new_tab" => ShortcutAction::NewTab,
+    "close_tab" => ShortcutAction::CloseTab,
+    "next_tab" => ShortcutAction::NextTab,
+    "previous_tab" => ShortcutAction::PreviousTab,
+    "toggle_sidebar" => ShortcutAction::ToggleSidebar,
+    "toggle_fullscreen" => ShortcutAction::ToggleFullscreen,
+    "open_command_palette" => ShortcutAction::OpenCommandPalette,
+    "zoom_in" => ShortcutAction::ZoomIn,
+    "zoom_out" => ShortcutAction::ZoomOut,
+    "zoom_reset" => ShortcutAction::ZoomReset,
+    "find_in_page" => ShortcutAction::FindInPage,
+    "show_help" => ShortcutAction::ShowHelp,
+    "add_bookmark" => ShortcutAction::AddBookmark,
+    "toggle_bookmark_panel" => ShortcutAction::ToggleBookmarkPanel,
+    s if s.starts_with("switch_to_tab_") => {
+      let index: u8 = s
+        .strip_prefix("switch_to_tab_")
+        .and_then(|n| n.parse().ok())
+        .ok_or_else(|| format!("Invalid tab index in action: {}", action))?;
+      ShortcutAction::SwitchToTab(index)
+    }
+    _ => return Err(format!("Unknown shortcut action: {}", action)),
+  };
+
+  execute_action(&app_handle, &shortcut_action);
+  Ok(())
 }
