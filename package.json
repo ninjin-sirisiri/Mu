@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "format": "oxfmt src",
+    "format:check": "oxfmt --check src",
     "lint": "oxlint src",
+    "lint:fix": "oxlint --fix src",
+    "check": "bun run format:check && bun run lint",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "dependencies": {
@@ -25,6 +28,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "oxfmt": "^0.23.0",
     "oxlint": "^1.38.0",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"

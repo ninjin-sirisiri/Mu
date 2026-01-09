@@ -3,7 +3,11 @@
     "allow": [
       "Bash(git add:*)",
       "Bash(bun add:*)",
-      "Skill(commit)"
+      "Skill(commit)",
+      "WebSearch",
+      "Bash(bun run lint)",
+      "Bash(bun run format:*)",
+      "Bash(bun run:*)"
     ]
   }
 }
