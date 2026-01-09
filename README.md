@@ -142,12 +142,13 @@ Tabs and settings are consolidated in the sidebar.
 <!-- ROADMAP -->
 ## Roadmap
 
-- [x] Basic browsing features (WebView)
-- [x] Command Palette
-- [x] Vertical Tabs (Sidebar)
-- [x] Sidebar customization (Left/Right placement, Auto-hide)
-- [x] Ad blocking feature
-- [ ] Mobile support (iOS / Android)
+For a detailed development roadmap, see [docs/roadmap/overview.md](docs/roadmap/overview.md).
+
+- [ ] Phase 1: Foundation (WebView, Navigation) - In Progress
+- [ ] Phase 2: Core Features (Command Palette, Tab Management)
+- [ ] Phase 3: Advanced Features (Sidebar, Ad Blocker)
+- [ ] Phase 4: Polish (Performance, Quality)
+- [ ] Future: Mobile support (iOS / Android)
 
 See the [open issues](https://github.com/ninjin-sirisiri/mu/issues) for a full list of proposed features (and known issues).
 
