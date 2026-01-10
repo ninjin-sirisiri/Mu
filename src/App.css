@@ -1,1 +1,14 @@
 @import 'tailwindcss';
+
+/* Prevent content from overflowing the webview bounds */
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  /* Transparent background for overlay on content webview */
+  background: transparent;
+}

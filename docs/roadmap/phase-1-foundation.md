@@ -21,10 +21,10 @@
 
 #### 1.1 WebViewモジュールの作成
 
-- [ ] `src-tauri/src/modules/webview/`ディレクトリを作成
-- [ ] `mod.rs`: WebView管理の公開APIを定義
-- [ ] `commands.rs`: WebView操作のTauriコマンドを実装
-- [ ] `models.rs`: WebView状態のデータモデルを定義
+- [x] `src-tauri/src/modules/webview/`ディレクトリを作成
+- [x] `mod.rs`: WebView管理の公開APIを定義
+- [x] `commands.rs`: WebView操作のTauriコマンドを実装
+- [x] `models.rs`: WebView状態のデータモデルを定義
 
 **Tauriコマンド一覧**:
 
@@ -67,10 +67,10 @@ pub struct WebViewState {
 
 #### 1.2 ナビゲーションモジュールの作成
 
-- [ ] `src-tauri/src/modules/navigation/`ディレクトリを作成
-- [ ] `mod.rs`: ナビゲーション機能の公開API
-- [ ] `commands.rs`: ナビゲーション操作のTauriコマンド
-- [ ] `models.rs`: ナビゲーション履歴のデータモデル
+- [x] `src-tauri/src/modules/navigation/`ディレクトリを作成
+- [x] `mod.rs`: ナビゲーション機能の公開API
+- [x] `commands.rs`: ナビゲーション操作のTauriコマンド
+- [x] `models.rs`: ナビゲーション履歴のデータモデル
 
 **Tauriコマンド一覧**:
 
@@ -133,8 +133,8 @@ impl NavigationHistory {
 
 #### 1.3 lib.rsへのコマンド登録
 
-- [ ] `src-tauri/src/lib.rs`にモジュールを追加
-- [ ] Tauriビルダーにコマンドを登録
+- [x] `src-tauri/src/lib.rs`にモジュールを追加
+- [x] Tauriビルダーにコマンドを登録
 
 ```rust
 // lib.rs
@@ -168,7 +168,7 @@ pub fn run() {
 
 #### 2.1 型定義の作成
 
-- [ ] `src/types/webview.d.ts`を作成
+- [x] `src/types/webview.d.ts`を作成
 
 ```typescript
 // src/types/webview.d.ts
@@ -192,10 +192,10 @@ export interface NavigationControls {
 
 #### 2.2 WebView機能の実装
 
-- [ ] `src/features/webview/`ディレクトリを作成
-- [ ] `WebViewContainer.tsx`: WebView表示コンポーネント
-- [ ] `hooks/use-navigation.ts`: ナビゲーション状態管理hook
-- [ ] `index.ts`: 公開APIのエクスポート
+- [x] `src/features/webview/`ディレクトリを作成
+- [x] `WebViewContainer.tsx`: WebView表示コンポーネント
+- [x] `hooks/use-navigation.ts`: ナビゲーション状態管理hook
+- [x] `index.ts`: 公開APIのエクスポート
 
 **WebViewContainer.tsx**:
 
@@ -278,9 +278,9 @@ export const useNavigation = (): [WebViewState, NavigationControls] => {
 
 #### 2.3 アドレスバー機能の実装（暫定）
 
-- [ ] `src/features/address-bar/`ディレクトリを作成
-- [ ] `AddressBar.tsx`: URLインプットコンポーネント
-- [ ] `index.ts`: 公開APIのエクスポート
+- [x] `src/features/address-bar/`ディレクトリを作成
+- [x] `AddressBar.tsx`: URLインプットコンポーネント
+- [x] `index.ts`: 公開APIのエクスポート
 
 **AddressBar.tsx**:
 
@@ -328,8 +328,8 @@ export const AddressBar: React.FC<AddressBarProps> = ({
 
 #### 2.4 共通UIコンポーネントの作成
 
-- [ ] `src/components/Button.tsx`: ナビゲーションボタン用
-- [ ] `src/components/Input.tsx`: アドレスバー用
+- [x] `src/components/Button.tsx`: ナビゲーションボタン用
+- [x] `src/components/Input.tsx`: アドレスバー用（AddressBarで直接実装）
 
 **Button.tsx**:
 
@@ -375,7 +375,7 @@ export const Button: React.FC<ButtonProps> = ({
 
 #### 2.5 App.tsxでレイアウト構築
 
-- [ ] `src/App.tsx`を更新してブラウザUIを構築
+- [x] `src/App.tsx`を更新してブラウザUIを構築
 
 ```typescript
 // src/App.tsx
@@ -510,13 +510,13 @@ fn validate_url(url: &str) -> Result<String, String> {
 
 このフェーズは以下の条件を満たした時点で完了とします。
 
-- [ ] ユーザーがURLを入力し、Webページが正しく表示される
-- [ ] 戻る/進む/リロード/ホームボタンが機能する
-- [ ] ナビゲーション状態（戻る/進む可否）が正しく表示される
-- [ ] URLが変更されたときにアドレスバーが更新される
-- [ ] ページ読み込み中の状態が表示される
-- [ ] `docs/rules/coding-guidelines.md`のガイドラインに準拠している
-- [ ] `docs/rules/file-structure.md`のディレクトリ構造に準拠している
+- [x] ユーザーがURLを入力し、Webページが正しく表示される
+- [x] 戻る/進む/リロード/ホームボタンが機能する
+- [x] ナビゲーション状態（戻る/進む可否）が正しく表示される
+- [x] URLが変更されたときにアドレスバーが更新される
+- [x] ページ読み込み中の状態が表示される
+- [x] `docs/rules/coding-guidelines.md`のガイドラインに準拠している
+- [x] `docs/rules/file-structure.md`のディレクトリ構造に準拠している
 
 ## テスト項目
 
@@ -524,18 +524,18 @@ fn validate_url(url: &str) -> Result<String, String> {
 
 ### 機能テスト
 
-- [ ] URLを入力してEnterキーを押すと、ページが表示される
-- [ ] 戻るボタンをクリックすると、前のページに戻る
-- [ ] 進むボタンをクリックすると、次のページに進む
-- [ ] リロードボタンをクリックすると、ページが再読み込みされる
-- [ ] ホームボタンをクリックすると、ホームページに移動する
-- [ ] ページ読み込み中は適切な状態が表示される
+- [x] URLを入力してEnterキーを押すと、ページが表示される
+- [x] 戻るボタンをクリックすると、前のページに戻る
+- [x] 進むボタンをクリックすると、次のページに進む
+- [x] リロードボタンをクリックすると、ページが再読み込みされる
+- [x] ホームボタンをクリックすると、ホームページに移動する
+- [x] ページ読み込み中は適切な状態が表示される
 
 ### エッジケース
 
-- [ ] 無効なURLを入力した場合、エラーメッセージが表示される
-- [ ] 履歴がない状態で戻るボタンを押しても何も起こらない
-- [ ] ネットワークエラー時に適切なエラーが表示される
+- [x] 無効なURLを入力した場合、エラーメッセージが表示される
+- [x] 履歴がない状態で戻るボタンを押しても何も起こらない
+- [x] ネットワークエラー時に適切なエラーが表示される
 
 ## 参照ドキュメント
 
