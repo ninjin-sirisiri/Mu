@@ -4,11 +4,10 @@
 
 ## 目標
 
-カスタマイズ性と生産性向上機能を追加します。サイドバーシステム、広告ブロック、設定システムを実装し、ユーザーがブラウザを自分の好みにカスタマイズできるようにします。
+カスタマイズ性と生産性向上機能を追加します。広告ブロック、設定システムを実装し、ユーザーがブラウザを自分の好みにカスタマイズできるようにします。
 
 ## 成果物
 
-- **サイドバーシステム**（左右配置、固定/自動隠蔽モード）
 - **広告ブロック機能**（ドメインベースのブロックリスト）
 - **設定システム**（永続化、設定UI）
 - **テーマ切り替え**（ライト/ダーク）
@@ -200,156 +199,9 @@ export const useSettings = () => {
 };
 ```
 
-### 2. サイドバーシステム
+### 2. 広告ブロック機能
 
-#### 2.1 サイドバーコンポーネントの作成
-
-- [ ] `src/features/sidebar/`ディレクトリを作成
-- [ ] `Sidebar.tsx`: サイドバーメインコンポーネント
-- [ ] `components/SidebarContainer.tsx`: コンテナ（位置制御）
-- [ ] `components/SidebarContent.tsx`: コンテンツ（タブリスト、設定）
-- [ ] `hooks/use-sidebar-state.ts`: サイドバー状態管理
-- [ ] `index.ts`: 公開APIのエクスポート
-
-**Sidebar.tsx**:
-
-```typescript
-// src/features/sidebar/Sidebar.tsx
-
-import React, { useState } from 'react';
-import { SidebarContainer } from './components/SidebarContainer';
-import { SidebarContent } from './components/SidebarContent';
-import { useSettings } from '../../hooks/use-settings';
-
-export const Sidebar: React.FC = () => {
-  const { settings } = useSettings();
-  const [isVisible, setIsVisible] = useState(true);
-
-  if (!settings) return null;
-
-  const { position, mode, width } = settings.sidebar;
-
-  // 自動隠蔽モードの場合、マウスホバーで表示
-  const handleMouseEnter = () => {
-    if (mode === 'auto-hide') {
-      setIsVisible(true);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (mode === 'auto-hide') {
-      setIsVisible(false);
-    }
-  };
-
-  return (
-    <SidebarContainer
-      position={position}
-      width={width}
-      isVisible={isVisible || mode === 'fixed'}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <SidebarContent />
-    </SidebarContainer>
-  );
-};
-```
-
-**SidebarContainer.tsx**:
-
-```typescript
-// src/features/sidebar/components/SidebarContainer.tsx
-
-import React from 'react';
-
-interface SidebarContainerProps {
-  position: 'left' | 'right';
-  width: number;
-  isVisible: boolean;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-  children: React.ReactNode;
-}
-
-export const SidebarContainer: React.FC<SidebarContainerProps> = ({
-  position,
-  width,
-  isVisible,
-  onMouseEnter,
-  onMouseLeave,
-  children,
-}) => {
-  const translateX = isVisible ? 0 : position === 'left' ? -width : width;
-
-  return (
-    <aside
-      className={`
-        fixed top-0 h-screen bg-white border-r shadow-lg
-        transition-transform duration-200
-        ${position === 'left' ? 'left-0' : 'right-0'}
-      `}
-      style={{
-        width: `${width}px`,
-        transform: `translateX(${translateX}px)`,
-      }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
-      {children}
-    </aside>
-  );
-};
-```
-
-**SidebarContent.tsx**:
-
-```typescript
-// src/features/sidebar/components/SidebarContent.tsx
-
-import React, { useState } from 'react';
-import { TabList } from '../../tabs/components/TabList';
-import { SettingsPanel } from './SettingsPanel';
-
-export const SidebarContent: React.FC = () => {
-  const [activeSection, setActiveSection] = useState<'tabs' | 'settings'>('tabs');
-
-  return (
-    <div className="flex flex-col h-full">
-      {/* タブ */}
-      <nav className="flex border-b">
-        <button
-          className={`flex-1 py-2 ${activeSection === 'tabs' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => setActiveSection('tabs')}
-        >
-          タブ
-        </button>
-        <button
-          className={`flex-1 py-2 ${activeSection === 'settings' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => setActiveSection('settings')}
-        >
-          設定
-        </button>
-      </nav>
-
-      {/* コンテンツ */}
-      <div className="flex-1 overflow-y-auto">
-        {activeSection === 'tabs' && <TabList />}
-        {activeSection === 'settings' && <SettingsPanel />}
-      </div>
-    </div>
-  );
-};
-```
-
-#### 2.2 Phase 2のタブリストをサイドバーに移行
-
-- [ ] Phase 2で作成したタブバーをサイドバー内に移動
-- [ ] タブリストのスタイルを垂直レイアウトに調整
-
-### 3. 広告ブロック機能
-
-#### 3.1 バックエンド: 広告ブロックモジュール
+#### 2.1 バックエンド: 広告ブロックモジュール
 
 - [ ] `src-tauri/src/modules/ad_blocker/`ディレクトリを作成
 - [ ] `mod.rs`: 広告ブロック機能の公開API
@@ -400,7 +252,7 @@ pub fn should_block_url(url: String, state: State<Mutex<Settings>>) -> Result<bo
 }
 ```
 
-#### 3.2 フロントエンド: ブロックリスト管理UI
+#### 2.2 フロントエンド: ブロックリスト管理UI
 
 - [ ] `src/features/ad-blocker/`ディレクトリを作成
 - [ ] `BlockedDomainsList.tsx`: ブロックリスト表示
@@ -444,9 +296,9 @@ export const BlockedDomainsList: React.FC<BlockedDomainsListProps> = ({
 };
 ```
 
-### 4. テーマシステム
+### 3. テーマシステム
 
-#### 4.1 テーマ切り替え機能
+#### 3.1 テーマ切り替え機能
 
 - [ ] `src/hooks/use-theme.ts`を作成
 - [ ] ライト/ダーク/システムテーマの実装
@@ -488,7 +340,7 @@ export const useTheme = () => {
 };
 ```
 
-#### 4.2 設定パネルへのテーマセレクタ追加
+#### 3.2 設定パネルへのテーマセレクタ追加
 
 ```typescript
 // src/features/sidebar/components/SettingsPanel.tsx（抜粋）
@@ -593,18 +445,7 @@ pub fn load_settings() -> Settings {
 }
 ```
 
-### 課題2: サイドバーのスライドインアニメーション
-
-**課題**: 自動隠蔽モードでのスムーズなアニメーション
-
-**解決策**:
-- CSS `transition`を使用
-- `transform: translateX()`でスライド
-- マウスホバーで`isVisible`状態を切り替え
-
-**パフォーマンス**: `transform`は`left`/`right`よりパフォーマンスが良い
-
-### 課題3: 広告ブロックのパフォーマンス
+### 課題2: 広告ブロックのパフォーマンス
 
 **課題**: 全てのリクエストをチェックすると遅延が発生する可能性
 
@@ -615,19 +456,15 @@ pub fn load_settings() -> Settings {
 
 ## 依存関係
 
-**前提条件**: Phase 2のタブ管理とコマンドパレットが完了していること
+**前提条件**: Phase 2のタブ管理、コマンドパレット、サイドバーが完了していること
 
 **後続フェーズへの影響**:
 - Phase 4では、設定システムを活用してパフォーマンス設定を追加
-- サイドバーは将来的な拡張（ブックマーク、履歴）の基盤となる
 
 ## 完了条件
 
 - [ ] 設定システムが動作し、設定が永続化される
-- [ ] サイドバーが左右に配置できる
-- [ ] サイドバーが固定/自動隠蔽モードで動作する
-- [ ] タブリストがサイドバー内に表示される
-- [ ] 設定UIでサイドバーとテーマを変更できる
+- [ ] 設定UIでテーマを変更できる
 - [ ] 広告ブロック機能が動作する（ドメインブロックリスト）
 - [ ] テーマ（ライト/ダーク/システム）が切り替えられる
 - [ ] `docs/rules/minimalism-implementation.md`の原則に準拠している
@@ -638,12 +475,6 @@ pub fn load_settings() -> Settings {
 
 - [ ] 設定を変更して保存すると、再起動後も保持される
 - [ ] デフォルト設定が正しく適用される
-
-### サイドバー
-
-- [ ] サイドバーの位置（左/右）を切り替えられる
-- [ ] 固定モードでサイドバーが常に表示される
-- [ ] 自動隠蔽モードでマウスホバーで表示/非表示が切り替わる
 
 ### 広告ブロック
 

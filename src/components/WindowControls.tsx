@@ -16,11 +16,11 @@ const WindowControlButton: React.FC<WindowControlButtonProps> = ({
   variant = 'default',
 }) => {
   const baseStyles =
-    'flex h-8 w-10 items-center justify-center text-neutral-600 transition-colors focus:outline-none';
+    'flex h-8 w-10 items-center justify-center text-gray-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:text-gray-400';
   const variantStyles =
     variant === 'close'
       ? 'hover:bg-red-500 hover:text-white'
-      : 'hover:bg-neutral-200';
+      : 'hover:bg-gray-200 dark:hover:bg-gray-800';
 
   return (
     <button

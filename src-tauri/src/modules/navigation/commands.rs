@@ -1,9 +1,10 @@
 //! Navigation Tauri commands
 
 use super::models::{NavigationHistory, DEFAULT_HOME_URL};
+use crate::modules::tabs::models::TabManager;
 use crate::modules::webview::commands::{emit_navigation_update, navigate_to_internal};
 use std::sync::Mutex;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use url::Url;
 
 /// Navigate to the previous page in history
@@ -11,6 +12,7 @@ use url::Url;
 pub async fn go_back(
     app: AppHandle,
     history: State<'_, Mutex<NavigationHistory>>,
+    tab_manager: State<'_, Mutex<TabManager>>,
 ) -> Result<(), String> {
     // Get the previous URL from history
     let url_to_navigate = {
@@ -19,6 +21,13 @@ pub async fn go_back(
             .ok_or("Cannot go back - no previous page in history")?
             .clone()
     };
+
+    // Update the active tab's URL
+    if let Ok(mut manager) = tab_manager.lock() {
+        if let Some(active_id) = manager.get_active_tab_id() {
+            let _ = manager.update_tab_url(&active_id, url_to_navigate.clone());
+        }
+    }
 
     // Navigate to the previous URL
     if let Some(webview) = app.get_webview("content") {
@@ -43,6 +52,7 @@ pub async fn go_back(
 pub async fn go_forward(
     app: AppHandle,
     history: State<'_, Mutex<NavigationHistory>>,
+    tab_manager: State<'_, Mutex<TabManager>>,
 ) -> Result<(), String> {
     // Get the next URL from history
     let url_to_navigate = {
@@ -51,6 +61,13 @@ pub async fn go_forward(
             .ok_or("Cannot go forward - no next page in history")?
             .clone()
     };
+
+    // Update the active tab's URL
+    if let Ok(mut manager) = tab_manager.lock() {
+        if let Some(active_id) = manager.get_active_tab_id() {
+            let _ = manager.update_tab_url(&active_id, url_to_navigate.clone());
+        }
+    }
 
     // Navigate to the next URL
     if let Some(webview) = app.get_webview("content") {
@@ -96,7 +113,15 @@ pub async fn reload(
 pub async fn go_home(
     app: AppHandle,
     history: State<'_, Mutex<NavigationHistory>>,
+    tab_manager: State<'_, Mutex<TabManager>>,
 ) -> Result<(), String> {
+    // Update the active tab's URL
+    if let Ok(mut manager) = tab_manager.lock() {
+        if let Some(active_id) = manager.get_active_tab_id() {
+            let _ = manager.update_tab_url(&active_id, DEFAULT_HOME_URL.to_string());
+        }
+    }
+
     navigate_to_internal(app, history, DEFAULT_HOME_URL.to_string()).await
 }
 
@@ -106,6 +131,7 @@ pub async fn go_home(
 pub async fn update_history_if_changed(
     app: AppHandle,
     history: State<'_, Mutex<NavigationHistory>>,
+    tab_manager: State<'_, Mutex<TabManager>>,
     new_url: String,
 ) -> Result<(), String> {
     if new_url.is_empty() || new_url == "about:blank" {
@@ -127,8 +153,18 @@ pub async fn update_history_if_changed(
             let mut hist = history
                 .lock()
                 .map_err(|e| format!("Failed to lock history: {}", e))?;
-            hist.push(new_url);
+            hist.push(new_url.clone());
         } // hist is dropped here
+
+        // Update the active tab's URL
+        if let Ok(mut manager) = tab_manager.lock() {
+            if let Some(active_id) = manager.get_active_tab_id() {
+                let _ = manager.update_tab_url(&active_id, new_url);
+            }
+        }
+
+        // Emit tab-updated event to notify sidebar
+        let _ = app.emit("tab-updated", ());
 
         // Emit navigation update after the lock is released
         emit_navigation_update(&app, &history).await;

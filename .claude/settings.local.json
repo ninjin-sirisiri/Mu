@@ -25,7 +25,9 @@
       "Bash(git -C \"C:\\\\Users\\\\user\\\\Desktop\\\\Mu\" diff docs/roadmap/phase-1-foundation.md)",
       "Bash(git -C \"C:\\\\Users\\\\user\\\\Desktop\\\\Mu\" add .)",
       "Bash(git -C \"C:\\\\Users\\\\user\\\\Desktop\\\\Mu\" commit -m \"$\\(cat <<''EOF''\nfeat: complete Phase 1 foundation with WebView integration\n\n- Add WebViewContainer to App.tsx for proper content display\n- Implement WebViewState struct usage for type-safe navigation state\n- Update Phase 1 roadmap with all completed checklist items\n- Verify all navigation features working: back, forward, reload, home\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git -C \"C:\\\\Users\\\\user\\\\Desktop\\\\Mu\" add -A)"
+      "Bash(git -C \"C:\\\\Users\\\\user\\\\Desktop\\\\Mu\" add -A)",
+      "Bash(powershell:*)",
+      "WebFetch(domain:chatgpt.com)"
     ]
   }
 }

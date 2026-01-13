@@ -24,19 +24,16 @@ export const useNavigation = (): [WebViewState, NavigationControls] => {
 
   // Listen for navigation updates from content webview
   useEffect(() => {
-    const unlisten = listen<NavigationUpdatePayload>(
-      'navigation-updated',
-      (event) => {
-        setState((prev) => ({
-          ...prev,
-          currentUrl: event.payload.url,
-          title: event.payload.title,
-          canGoBack: event.payload.canGoBack,
-          canGoForward: event.payload.canGoForward,
-          isLoading: false,
-        }));
-      }
-    );
+    const unlisten = listen<NavigationUpdatePayload>('navigation-updated', (event) => {
+      setState((prev) => ({
+        ...prev,
+        currentUrl: event.payload.url,
+        title: event.payload.title,
+        canGoBack: event.payload.canGoBack,
+        canGoForward: event.payload.canGoForward,
+        isLoading: false,
+      }));
+    });
 
     // Poll for URL changes to detect navigation from page links/redirects
     const pollInterval = setInterval(async () => {

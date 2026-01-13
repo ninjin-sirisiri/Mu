@@ -2,6 +2,7 @@
 
 use super::models::{NavBarState, WebViewState};
 use crate::modules::navigation::models::NavigationHistory;
+use crate::modules::tabs::models::TabManager;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, LogicalSize, Manager, State};
 use url::Url;
@@ -100,7 +101,20 @@ pub async fn navigate_to(
     app: AppHandle,
     url: String,
     history: State<'_, Mutex<NavigationHistory>>,
+    tab_manager: State<'_, Mutex<TabManager>>,
 ) -> Result<(), String> {
+    let normalized_url = validate_and_normalize_url(&url)?;
+
+    // Update the active tab's URL
+    if let Ok(mut manager) = tab_manager.lock() {
+        if let Some(active_id) = manager.get_active_tab_id() {
+            let _ = manager.update_tab_url(&active_id, normalized_url.clone());
+        }
+    }
+
+    // Emit tab-updated event to notify sidebar
+    let _ = app.emit("tab-updated", ());
+
     navigate_to_internal(app, history, url).await
 }
 

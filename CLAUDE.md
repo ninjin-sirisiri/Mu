@@ -120,9 +120,9 @@ When implementing features, always consider: Does this add complexity that goes 
 
 ## Coding Guidelines
 
-**Detailed coding standards and conventions are maintained in separate files under `docs/rules/` to reduce context size.**
+**Detailed coding standards and conventions are maintained in separate files under `.claude/rules/` to reduce context size.**
 
 Please refer to:
-- `docs/rules/coding-guidelines.md` - TypeScript/React and Rust/Tauri coding standards
+- `.claude/rules/coding-guidelines.md` - TypeScript/React and Rust/Tauri coding standards
 
-When adding new rules or guidelines, create separate markdown files in the `docs/rules/` directory rather than adding them to this file.
+When adding new rules or guidelines, create separate markdown files in the `.claude/rules/` directory rather than adding them to this file.

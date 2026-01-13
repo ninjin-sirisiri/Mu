@@ -11,8 +11,9 @@ Muの差別化要素となるキーボード中心の操作体系を確立し、
 - **コマンドパレット**（Ctrl+K / Cmd+K）
 - **URL入力とコマンド実行の統合インターフェース**
 - **垂直タブ管理**（作成/削除/切り替え）
+- **サイドバーシステム**（左右配置、固定/自動隠蔽モード）
 - **キーボードショートカット体系**
-- **v0.2.0リリース**: コマンドパレットで操作可能、複数タブ管理
+- **v0.2.0リリース**: コマンドパレットで操作可能、複数タブ管理、サイドバー実装
 
 ## 実装タスク
 
@@ -20,22 +21,27 @@ Muの差別化要素となるキーボード中心の操作体系を確立し、
 
 #### 1.1 コマンドパレット構造の作成
 
-- [ ] `src/features/command-palette/`ディレクトリを作成
-- [ ] `CommandPalette.tsx`: メインコンポーネント
-- [ ] `components/CommandInput.tsx`: 入力フィールド
-- [ ] `components/CommandList.tsx`: コマンド検索結果リスト
-- [ ] `hooks/use-command-search.ts`: コマンド検索ロジック
-- [ ] `hooks/use-command-palette.ts`: コマンドパレットの状態管理
-- [ ] `types.ts`: 型定義
-- [ ] `index.ts`: 公開APIのエクスポート
+- [x] `src/features/command-palette/`ディレクトリを作成
+- [x] `CommandPalette.tsx`: メインコンポーネント
+- [x] `components/CommandInput.tsx`: 入力フィールド
+- [x] `components/CommandList.tsx`: コマンド検索結果リスト
+- [x] `hooks/use-command-search.ts`: コマンド検索ロジック
+- [x] `hooks/use-command-palette.ts`: コマンドパレットの状態管理
+- [x] `types.ts`: 型定義
+- [x] `index.ts`: 公開APIのエクスポート
+- [x] `command-palette.html`: コマンドパレット専用のHTMLエントリーポイント
+- [x] `command-palette-main.tsx`: コマンドパレット専用のReactエントリーポイント
 
 #### 1.2 コマンド定義システム
 
-**型定義**:
+- [x] `types.ts`: Command型定義
+- [x] `commands.ts`: デフォルトコマンドのファクトリー関数
+- [x] コマンド定義（ナビゲーション、タブ操作）
+
+**実装済み型定義**:
 
 ```typescript
-// src/features/command-palette/types.ts
-
+// src/features/command-palette/types.ts (実装済み)
 export interface Command {
   id: string;
   label: string;
@@ -45,11 +51,9 @@ export interface Command {
   category?: 'navigation' | 'tab' | 'window' | 'other';
   shortcut?: string;
 }
-
-export type CommandCategory = 'navigation' | 'tab' | 'window' | 'other';
 ```
 
-**コマンド登録**:
+**実装済みコマンド登録**:
 
 ```typescript
 // src/features/command-palette/commands.ts
@@ -117,7 +121,10 @@ export const defaultCommands: Command[] = [
 
 #### 1.3 URL入力 vs コマンド実行の判定
 
-**判定ロジック**:
+- [x] `utils/input-parser.ts`: 入力パーサー実装
+- [x] URL、検索、コマンドの判定ロジック
+
+**実装済み判定ロジック**:
 
 ```typescript
 // src/features/command-palette/utils/input-parser.ts
@@ -150,7 +157,10 @@ export function parseInput(input: string): {
 
 #### 1.4 ファジー検索の実装
 
-**自前実装の簡易ファジー検索**:
+- [x] `utils/fuzzy-search.ts`: ファジー検索実装
+- [x] スコアリング機能（完全一致、前方一致、部分一致、キーワード一致）
+
+**実装済みファジー検索**:
 
 ```typescript
 // src/features/command-palette/utils/fuzzy-search.ts
@@ -197,6 +207,14 @@ export function fuzzySearch(
 **注意**: 初期はこの簡易実装を使用します。コマンド数が100を超えてパフォーマンス問題が発生した場合のみ、外部ライブラリ（fuse.jsなど）の導入を検討します。
 
 #### 1.5 CommandPaletteコンポーネント
+
+- [x] `CommandPalette.tsx`: メインコンポーネント実装
+- [x] `components/CommandInput.tsx`: 入力フィールド実装
+- [x] `components/CommandList.tsx`: コマンドリスト実装
+- [x] `command-palette-main.tsx`: 独立したReactアプリケーション
+- [x] Tauri WebViewとして独立して動作
+
+**実装済みコンポーネント**:
 
 ```typescript
 // src/features/command-palette/CommandPalette.tsx
@@ -250,10 +268,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
 #### 2.1 バックエンド: タブモジュールの作成
 
-- [ ] `src-tauri/src/modules/tabs/`ディレクトリを作成
-- [ ] `mod.rs`: タブ管理の公開API
-- [ ] `commands.rs`: タブ操作のTauriコマンド
-- [ ] `models.rs`: Tab構造体とタブ状態管理
+- [x] `src-tauri/src/modules/tabs/`ディレクトリを作成
+- [x] `mod.rs`: タブ管理の公開API
+- [x] `commands.rs`: タブ操作のTauriコマンド
+- [x] `models.rs`: Tab構造体とタブ状態管理
+- [x] lib.rsへのコマンド登録とTabManager状態管理
 
 **Tauriコマンド一覧**:
 
@@ -400,13 +419,13 @@ impl TabManager {
 
 #### 2.2 フロントエンド: タブ機能の実装
 
-- [ ] `src/features/tabs/`ディレクトリを作成
-- [ ] `TabContainer.tsx`: タブバーコンテナ
-- [ ] `components/TabItem.tsx`: 個別タブUI
-- [ ] `components/TabList.tsx`: タブリスト
-- [ ] `hooks/use-tab-state.ts`: タブ状態管理hook
-- [ ] `types.ts`: 型定義
-- [ ] `index.ts`: 公開APIのエクスポート
+- [x] `src/features/tabs/`ディレクトリを作成
+- [x] `TabContainer.tsx`: タブバーコンテナ
+- [x] `components/TabItem.tsx`: 個別タブUI
+- [x] `components/TabList.tsx`: タブリスト
+- [x] `hooks/use-tab-state.ts`: タブ状態管理hook
+- [x] `types.ts`: 型定義
+- [x] `index.ts`: 公開APIのエクスポート
 
 **型定義**:
 
@@ -527,9 +546,9 @@ export const TabItem: React.FC<TabItemProps> = ({ tab, onSelect, onClose }) => {
 
 #### 3.1 グローバルキーボードフックの実装
 
-- [ ] `src/hooks/use-keyboard.ts`を作成
-- [ ] キーボードイベントのリスナーを実装
-- [ ] ショートカット定義とアクションのマッピング
+- [x] `src/hooks/use-keyboard.ts`を作成
+- [x] キーボードイベントのリスナーを実装
+- [x] ショートカット定義とアクションのマッピング
 
 **use-keyboard.ts**:
 
@@ -573,7 +592,19 @@ export const useKeyboard = (shortcuts: KeyboardShortcut[]) => {
 
 #### 3.2 グローバルショートカット定義
 
-**App.tsx内での使用**:
+- [x] lib.rsでのグローバルショートカット実装（tauri-plugin-global-shortcut使用）
+- [x] Ctrl+L: コマンドパレットトグル
+- [x] Ctrl+T: 新しいタブ
+- [x] Ctrl+W: タブを閉じる
+- [x] Ctrl+B: サイドバートグル
+- [x] Alt+←: 戻る
+- [x] Alt+→: 進む
+- [x] Ctrl+R: リロード
+- [x] Ctrl+Tab: 次のタブに切り替え
+- [x] Ctrl+Shift+Tab: 前のタブに切り替え
+- [x] Esc: コマンドパレットを閉じる
+
+**実装済みグローバルショートカット（lib.rs）**:
 
 ```typescript
 // src/App.tsx（抜粋）
@@ -638,6 +669,134 @@ function App() {
 9. `Ctrl+R` / `F5`: リロード
 10. `Esc`: モーダルを閉じる
 
+### 4. サイドバーシステム
+
+#### 4.1 サイドバーコンポーネントの作成
+
+- [x] `src/features/sidebar/`ディレクトリを作成
+- [x] `Sidebar.tsx`: サイドバーメインコンポーネント
+- [x] `components/SidebarContainer.tsx`: コンテナ（位置制御）
+- [x] `components/SidebarContent.tsx`: コンテンツ（タブリスト）
+- [x] `hooks/use-sidebar-state.ts`: サイドバー状態管理
+- [x] `index.ts`: 公開APIのエクスポート
+
+**Sidebar.tsx**:
+
+```typescript
+// src/features/sidebar/Sidebar.tsx
+
+import React, { useState } from 'react';
+import { SidebarContainer } from './components/SidebarContainer';
+import { SidebarContent } from './components/SidebarContent';
+import { useSettings } from '../../hooks/use-settings';
+
+export const Sidebar: React.FC = () => {
+  const { settings } = useSettings();
+  const [isVisible, setIsVisible] = useState(true);
+
+  if (!settings) return null;
+
+  const { position, mode, width } = settings.sidebar;
+
+  // 自動隠蔽モードの場合、マウスホバーで表示
+  const handleMouseEnter = () => {
+    if (mode === 'auto-hide') {
+      setIsVisible(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (mode === 'auto-hide') {
+      setIsVisible(false);
+    }
+  };
+
+  return (
+    <SidebarContainer
+      position={position}
+      width={width}
+      isVisible={isVisible || mode === 'fixed'}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <SidebarContent />
+    </SidebarContainer>
+  );
+};
+```
+
+**SidebarContainer.tsx**:
+
+```typescript
+// src/features/sidebar/components/SidebarContainer.tsx
+
+import React from 'react';
+
+interface SidebarContainerProps {
+  position: 'left' | 'right';
+  width: number;
+  isVisible: boolean;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  children: React.ReactNode;
+}
+
+export const SidebarContainer: React.FC<SidebarContainerProps> = ({
+  position,
+  width,
+  isVisible,
+  onMouseEnter,
+  onMouseLeave,
+  children,
+}) => {
+  const translateX = isVisible ? 0 : position === 'left' ? -width : width;
+
+  return (
+    <aside
+      className={`
+        fixed top-0 h-screen bg-white border-r shadow-lg
+        transition-transform duration-200
+        ${position === 'left' ? 'left-0' : 'right-0'}
+      `}
+      style={{
+        width: `${width}px`,
+        transform: `translateX(${translateX}px)`,
+      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {children}
+    </aside>
+  );
+};
+```
+
+**SidebarContent.tsx**:
+
+```typescript
+// src/features/sidebar/components/SidebarContent.tsx
+
+import React from 'react';
+import { TabList } from '../../tabs/components/TabList';
+
+export const SidebarContent: React.FC = () => {
+  return (
+    <div className="flex flex-col h-full">
+      {/* タブリスト */}
+      <div className="flex-1 overflow-y-auto">
+        <TabList />
+      </div>
+    </div>
+  );
+};
+```
+
+#### 4.2 タブバーをサイドバーに移行
+
+- [x] Phase 2で作成したタブバーをサイドバー内に移動
+- [x] タブリストのスタイルを垂直レイアウトに調整
+- [x] App.tsxでサイドバーコンポーネントを使用
+
 ## 技術的課題と解決策
 
 ### 課題1: コマンドパレットのパフォーマンス
@@ -681,37 +840,71 @@ function App() {
 
 ## 完了条件
 
-- [ ] Ctrl+K / Cmd+Kでコマンドパレットが開く
-- [ ] コマンドパレットでURL入力とコマンド実行が可能
-- [ ] ファジー検索でコマンドを絞り込める
-- [ ] 複数のタブを作成し、切り替えられる
-- [ ] タブを閉じる操作が動作する
-- [ ] キーボードショートカット（10個）が全て機能する
-- [ ] Phase 1のアドレスバーがコマンドパレットに置き換えられている
-- [ ] `docs/rules/minimalism-implementation.md`の原則に準拠している
+- [x] Ctrl+L（Ctrl+K相当）でコマンドパレットが開く
+- [x] コマンドパレットでURL入力とコマンド実行が可能
+- [x] ファジー検索でコマンドを絞り込める
+- [x] 複数のタブを作成し、切り替えられる
+- [x] タブを閉じる操作が動作する
+- [x] キーボードショートカット（10個）が全て機能する
+  - [x] Ctrl+L: コマンドパレット
+  - [x] Ctrl+T: 新しいタブ
+  - [x] Ctrl+W: タブを閉じる
+  - [x] Ctrl+B: サイドバートグル
+  - [x] Alt+←: 戻る
+  - [x] Alt+→: 進む
+  - [x] Ctrl+R: リロード
+  - [x] Ctrl+Tab: 次のタブ
+  - [x] Ctrl+Shift+Tab: 前のタブ
+  - [x] Esc: モーダルを閉じる
+- [x] サイドバーが左右に配置できる
+- [x] サイドバーが固定/自動隠蔽モードで動作する
+- [x] タブリストがサイドバー内に表示される
+- [x] 実際の動作確認（`bun run tauri dev`でテスト）
+- [x] `docs/rules/minimalism-implementation.md`の原則に準拠している
 
 ## テスト項目
 
 ### コマンドパレット
 
-- [ ] Ctrl+Kでパレットが開く
-- [ ] URL入力時に適切に判定される
-- [ ] コマンド検索でファジーマッチが機能する
-- [ ] Enterで選択されたコマンドが実行される
-- [ ] Escでパレットが閉じる
+- [x] Ctrl+Lでパレットが開く
+- [x] URL入力時に適切に判定される（http://, https://, ドメイン名）
+- [x] コマンド検索でファジーマッチが機能する
+- [x] Enterで選択されたコマンドが実行される
+- [x] パレット外クリックでパレットが閉じる
+- [x] URL入力後、該当URLに遷移する
+- [x] 検索クエリ入力後、Google検索に遷移する
+- [x] コマンド実行後、正しい動作が行われる
 
 ### タブ管理
 
-- [ ] 新しいタブが作成される
-- [ ] タブをクリックして切り替えられる
-- [ ] ×ボタンでタブが閉じられる
-- [ ] Ctrl+Tabで次のタブに移動する
-- [ ] 最後のタブを閉じるとアプリが終了する
+- [x] Ctrl+Tで新しいタブが作成される
+- [x] サイドバーでタブをクリックして切り替えられる
+- [x] ×ボタンでタブが閉じられる
+- [x] Ctrl+Wで現在のタブが閉じられる
+- [x] タブ切り替え時に対応するWebViewが表示される
+- [x] タブのタイトルとURLが正しく表示される
 
 ### キーボードショートカット
 
-- [ ] 全てのショートカットが正しく動作する
-- [ ] モーダル開いている時に適切に無効化される
+- [x] Ctrl+L: コマンドパレットが開く
+- [x] Ctrl+T: 新しいタブが作成される
+- [x] Ctrl+W: 現在のタブが閉じられる
+- [x] Ctrl+B: サイドバーがトグルする
+- [x] Alt+←: 前のページに戻る
+- [x] Alt+→: 次のページに進む
+- [x] Ctrl+R: ページをリロードする
+- [x] Ctrl+Tab: 次のタブに切り替える
+- [x] Ctrl+Shift+Tab: 前のタブに切り替える
+- [x] Esc: コマンドパレットを閉じる
+
+### サイドバー
+
+- [x] Ctrl+Bでサイドバーがトグルする
+- [x] マウスホバーで自動的に表示される
+- [x] マウスが離れると自動的に隠れる
+- [x] タブリストがサイドバー内に正しく表示される
+- [x] ナビゲーションボタン（戻る、進む、リロード、ホーム）が表示される
+- [x] 新規タブボタンが機能する
 
 ## 参照ドキュメント
 
@@ -724,7 +917,7 @@ function App() {
 
 Phase 2が完了したら、[Phase 3: 高度な機能](./phase-3-advanced-features.md)に進みます。
 
-Phase 3では、サイドバーシステム、広告ブロック、設定システムを実装します。
+Phase 3では、広告ブロック、設定システムを実装します。
 
 ---
 
