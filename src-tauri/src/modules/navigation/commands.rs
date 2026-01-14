@@ -30,7 +30,13 @@ pub async fn go_back(
     }
 
     // Navigate to the previous URL
-    if let Some(webview) = app.get_webview("content") {
+    let active_label = tab_manager
+        .lock()
+        .map_err(|e| format!("Failed to lock tab manager: {}", e))?
+        .get_active_webview_label()
+        .ok_or_else(|| "アクティブなタブがありません".to_string())?;
+
+    if let Some(webview) = app.get_webview(&active_label) {
         let parsed_url: Url = url_to_navigate
             .parse()
             .map_err(|e| format!("Invalid URL: {}", e))?;
@@ -39,7 +45,7 @@ pub async fn go_back(
             .map_err(|e| format!("Navigation failed: {}", e))?;
 
         // Emit navigation update
-        emit_navigation_update(&app, &history).await;
+        emit_navigation_update(&app, &history, &tab_manager).await;
 
         Ok(())
     } else {
@@ -70,7 +76,13 @@ pub async fn go_forward(
     }
 
     // Navigate to the next URL
-    if let Some(webview) = app.get_webview("content") {
+    let active_label = tab_manager
+        .lock()
+        .map_err(|e| format!("Failed to lock tab manager: {}", e))?
+        .get_active_webview_label()
+        .ok_or_else(|| "アクティブなタブがありません".to_string())?;
+
+    if let Some(webview) = app.get_webview(&active_label) {
         let parsed_url: Url = url_to_navigate
             .parse()
             .map_err(|e| format!("Invalid URL: {}", e))?;
@@ -79,7 +91,7 @@ pub async fn go_forward(
             .map_err(|e| format!("Navigation failed: {}", e))?;
 
         // Emit navigation update
-        emit_navigation_update(&app, &history).await;
+        emit_navigation_update(&app, &history, &tab_manager).await;
 
         Ok(())
     } else {
@@ -92,15 +104,22 @@ pub async fn go_forward(
 pub async fn reload(
     app: AppHandle,
     history: State<'_, Mutex<NavigationHistory>>,
+    tab_manager: State<'_, Mutex<TabManager>>,
 ) -> Result<(), String> {
-    if let Some(webview) = app.get_webview("content") {
+    let active_label = tab_manager
+        .lock()
+        .map_err(|e| format!("Failed to lock tab manager: {}", e))?
+        .get_active_webview_label()
+        .ok_or_else(|| "アクティブなタブがありません".to_string())?;
+
+    if let Some(webview) = app.get_webview(&active_label) {
         // Use JavaScript to reload
         webview
             .eval("window.location.reload()")
             .map_err(|e| format!("Failed to reload: {}", e))?;
 
         // Emit navigation update
-        emit_navigation_update(&app, &history).await;
+        emit_navigation_update(&app, &history, &tab_manager).await;
 
         Ok(())
     } else {
@@ -122,7 +141,7 @@ pub async fn go_home(
         }
     }
 
-    navigate_to_internal(app, history, DEFAULT_HOME_URL.to_string()).await
+    navigate_to_internal(app, history, tab_manager, DEFAULT_HOME_URL.to_string()).await
 }
 
 /// Update history when URL changes (e.g., from clicking links in pages)
@@ -167,7 +186,7 @@ pub async fn update_history_if_changed(
         let _ = app.emit("tab-updated", ());
 
         // Emit navigation update after the lock is released
-        emit_navigation_update(&app, &history).await;
+        emit_navigation_update(&app, &history, &tab_manager).await;
     }
 
     Ok(())

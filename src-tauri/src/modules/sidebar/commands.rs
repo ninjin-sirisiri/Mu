@@ -1,6 +1,8 @@
 //! Sidebar-related Tauri commands
 
 use super::models::{Position, SidebarState};
+use crate::modules::tabs::models::TabManager;
+use std::sync::Mutex;
 use crate::modules::webview::models::NavBarState;
 use tauri::{LogicalPosition, LogicalSize, Manager, State};
 
@@ -19,9 +21,10 @@ pub fn toggle_sidebar(
     app_handle: tauri::AppHandle,
     sidebar_state: State<SidebarState>,
     nav_state: State<NavBarState>,
+    tab_manager: State<'_, Mutex<TabManager>>,
 ) -> Result<bool, String> {
     let new_visible = sidebar_state.toggle();
-    update_layout(&app_handle, new_visible, nav_state.is_visible())?;
+    update_layout(&app_handle, new_visible, nav_state.is_visible(), &tab_manager)?;
     Ok(new_visible)
 }
 
@@ -38,9 +41,10 @@ pub fn set_sidebar_visible(
     visible: bool,
     sidebar_state: State<SidebarState>,
     nav_state: State<NavBarState>,
+    tab_manager: State<'_, Mutex<TabManager>>,
 ) -> Result<(), String> {
     sidebar_state.set_visible(visible);
-    update_layout(&app_handle, visible, nav_state.is_visible())?;
+    update_layout(&app_handle, visible, nav_state.is_visible(), &tab_manager)?;
     Ok(())
 }
 
@@ -49,6 +53,7 @@ fn update_layout(
     app_handle: &tauri::AppHandle,
     sidebar_visible: bool,
     nav_visible: bool,
+    tab_manager: &State<'_, Mutex<TabManager>>,
 ) -> Result<(), String> {
     let window = app_handle
         .get_window("main")
@@ -56,9 +61,6 @@ fn update_layout(
     let ui_webview = app_handle
         .get_webview("ui")
         .ok_or_else(|| "UI webview not found".to_string())?;
-    let content_webview = app_handle
-        .get_webview("content")
-        .ok_or_else(|| "Content webview not found".to_string())?;
     let sidebar_webview = app_handle
         .get_webview("sidebar")
         .ok_or_else(|| "Sidebar webview not found".to_string())?;
@@ -71,13 +73,14 @@ fn update_layout(
     let width = size.width as f64 / scale_factor;
     let height = size.height as f64 / scale_factor;
 
-    // Content always full size (sidebar overlays on top)
-    content_webview
-        .set_position(LogicalPosition::new(0.0, 0.0))
-        .map_err(|e| e.to_string())?;
-    content_webview
-        .set_size(LogicalSize::new(width, height))
-        .map_err(|e| e.to_string())?;
+    if let Ok(manager) = tab_manager.lock() {
+        for tab in manager.get_all_tabs() {
+            if let Some(content_webview) = app_handle.get_webview(&tab.webview_label) {
+                let _ = content_webview.set_position(LogicalPosition::new(0.0, 0.0));
+                let _ = content_webview.set_size(LogicalSize::new(width, height));
+            }
+        }
+    }
 
     // UI webview always full width
     ui_webview
