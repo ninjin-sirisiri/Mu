@@ -9,6 +9,8 @@ pub struct Tab {
     pub url: String,
     pub is_active: bool,
     pub favicon: Option<String>,
+    pub webview_label: String,
+    pub last_active_at: u64,
 }
 
 pub struct TabManager {
@@ -31,6 +33,8 @@ impl TabManager {
     pub fn create_tab(&mut self, url: String) -> String {
         let id = format!("tab-{}", self.next_id);
         self.next_id += 1;
+        let webview_label = format!("content-{}", id);
+        let now = current_time_ms();
 
         let tab = Tab {
             id: id.clone(),
@@ -38,6 +42,8 @@ impl TabManager {
             url,
             is_active: false,
             favicon: None,
+            webview_label,
+            last_active_at: now,
         };
 
         self.tabs.insert(id.clone(), tab);
@@ -99,6 +105,7 @@ impl TabManager {
         // 新しいタブをアクティブにする
         if let Some(tab) = self.tabs.get_mut(id) {
             tab.is_active = true;
+            tab.last_active_at = current_time_ms();
             self.active_tab_id = Some(id.to_string());
             Ok(())
         } else {
@@ -116,6 +123,52 @@ impl TabManager {
 
     pub fn get_active_tab_id(&self) -> Option<String> {
         self.active_tab_id.clone()
+    }
+
+    pub fn get_active_tab(&self) -> Option<Tab> {
+        self.active_tab_id
+            .as_ref()
+            .and_then(|id| self.tabs.get(id))
+            .cloned()
+    }
+
+    pub fn get_tab(&self, id: &str) -> Option<Tab> {
+        self.tabs.get(id).cloned()
+    }
+
+    pub fn get_active_webview_label(&self) -> Option<String> {
+        self.get_active_tab().map(|tab| tab.webview_label)
+    }
+
+    pub fn get_next_active_after_close(&self, id: &str) -> Option<String> {
+        if self.active_tab_id.as_deref() != Some(id) {
+            return None;
+        }
+
+        let closed_index = self.tab_order.iter().position(|tab_id| tab_id == id)?;
+
+        self.tab_order
+            .get(closed_index)
+            .or_else(|| if closed_index > 0 { self.tab_order.get(closed_index - 1) } else { None })
+            .cloned()
+    }
+
+    pub fn get_next_tab_id(&self) -> Option<String> {
+        let active_id = self.active_tab_id.as_ref()?;
+        let current_index = self.tab_order.iter().position(|id| id == active_id)?;
+        let next_index = (current_index + 1) % self.tab_order.len();
+        self.tab_order.get(next_index).cloned()
+    }
+
+    pub fn get_previous_tab_id(&self) -> Option<String> {
+        let active_id = self.active_tab_id.as_ref()?;
+        let current_index = self.tab_order.iter().position(|id| id == active_id)?;
+        let previous_index = if current_index == 0 {
+            self.tab_order.len() - 1
+        } else {
+            current_index - 1
+        };
+        self.tab_order.get(previous_index).cloned()
     }
 
     pub fn update_tab_title(&mut self, id: &str, title: String) -> Result<(), String> {
@@ -198,5 +251,46 @@ impl TabManager {
 
         self.switch_tab(&previous_id)?;
         Ok(previous_id)
+    }
+}
+
+fn current_time_ms() -> u64 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis() as u64)
+        .unwrap_or(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_next_previous_tab_id() {
+        let mut manager = TabManager::new();
+        let first = manager.create_tab("https://example.com".to_string());
+        let second = manager.create_tab("https://example.org".to_string());
+        let third = manager.create_tab("https://example.net".to_string());
+
+        manager.switch_tab(&first).unwrap();
+        assert_eq!(manager.get_next_tab_id(), Some(second.clone()));
+        assert_eq!(manager.get_previous_tab_id(), Some(third.clone()));
+
+        manager.switch_tab(&second).unwrap();
+        assert_eq!(manager.get_next_tab_id(), Some(third.clone()));
+        assert_eq!(manager.get_previous_tab_id(), Some(first.clone()));
+    }
+
+    #[test]
+    fn test_next_active_after_close() {
+        let mut manager = TabManager::new();
+        let first = manager.create_tab("https://example.com".to_string());
+        let second = manager.create_tab("https://example.org".to_string());
+
+        manager.switch_tab(&second).unwrap();
+        assert_eq!(manager.get_next_active_after_close(&second), Some(first.clone()));
+        assert_eq!(manager.get_next_active_after_close(&first), None);
     }
 }

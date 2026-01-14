@@ -172,133 +172,52 @@ pub fn run() {
             let actual_width = actual_size.width as f64 / scale_factor;
             let actual_height = actual_size.height as f64 / scale_factor;
 
-            // Add the content webview (full size, positioned at origin)
-            // Sidebar will overlay on top of this
+            let (initial_tab_id, initial_tab) = {
+                let tab_manager = app.state::<Mutex<TabManager>>();
+                let mut manager = tab_manager.lock().map_err(|e| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to lock tab manager: {}", e),
+                    )
+                })?;
+                if manager.get_all_tabs().is_empty() {
+                    let tab_id = manager.create_tab("https://google.com".to_string());
+                    let tab = manager
+                        .get_tab(&tab_id)
+                        .ok_or_else(|| {
+                            std::io::Error::new(
+                                std::io::ErrorKind::Other,
+                                "Initial tab not found",
+                            )
+                        })?;
+                    (tab_id, tab)
+                } else {
+                    let tab = manager
+                        .get_active_tab()
+                        .ok_or_else(|| {
+                            std::io::Error::new(
+                                std::io::ErrorKind::Other,
+                                "Active tab not found",
+                            )
+                        })?;
+                    (tab.id.clone(), tab)
+                }
+            };
+
             let _content_webview = window.add_child(
                 tauri::webview::WebviewBuilder::new(
-                    "content",
-                    WebviewUrl::External("https://google.com".parse().unwrap()),
+                    initial_tab.webview_label.clone(),
+                    WebviewUrl::External(initial_tab.url.parse().map_err(|e| {
+                        std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            format!("Failed to parse initial tab URL: {}", e),
+                        )
+                    })?),
                 )
-                .initialization_script(
-                    r#"
-                    // タイトルとファビコンの変更を検知してTauriイベントを発行
-                    let lastTitle = document.title;
-                    let lastFavicon = null;
-
-                    function getFaviconUrl() {
-                        // 優先順位順にファビコンを検索
-                        const selectors = [
-                            'link[rel="icon"]',
-                            'link[rel="shortcut icon"]',
-                            'link[rel="apple-touch-icon"]',
-                            'link[rel="apple-touch-icon-precomposed"]'
-                        ];
-
-                        for (const selector of selectors) {
-                            const link = document.querySelector(selector);
-                            if (link && link.href) {
-                                return link.href;
-                            }
-                        }
-
-                        // デフォルトのfavicon.icoを返す
-                        try {
-                            const url = new URL('/favicon.ico', window.location.origin);
-                            return url.href;
-                        } catch (e) {
-                            return null;
-                        }
-                    }
-
-                    function notifyTitleChange() {
-                        const currentTitle = document.title;
-                        if (currentTitle !== lastTitle) {
-                            lastTitle = currentTitle;
-                            window.__TAURI_INTERNALS__.invoke('handle_title_changed', {
-                                title: currentTitle
-                            }).catch(console.error);
-                        }
-                    }
-
-                    function notifyFaviconChange() {
-                        const currentFavicon = getFaviconUrl();
-                        if (currentFavicon !== lastFavicon) {
-                            lastFavicon = currentFavicon;
-                            window.__TAURI_INTERNALS__.invoke('handle_favicon_changed', {
-                                favicon: currentFavicon
-                            }).catch(console.error);
-                        }
-                    }
-
-                    function notifyChanges() {
-                        notifyTitleChange();
-                        notifyFaviconChange();
-                    }
-
-                    // MutationObserverでtitle要素とfavicon要素の変更を監視
-                    const observer = new MutationObserver(() => {
-                        notifyTitleChange();
-                    });
-
-                    // titleタグの変更を監視
-                    const titleElement = document.querySelector('title');
-                    if (titleElement) {
-                        observer.observe(titleElement, {
-                            childList: true,
-                            characterData: true,
-                            subtree: true
-                        });
-                    }
-
-                    // headの変更も監視（SPAでtitleタグやfaviconが動的に追加される場合）
-                    const headObserver = new MutationObserver(() => {
-                        const newTitleElement = document.querySelector('title');
-                        if (newTitleElement && !titleElement) {
-                            observer.observe(newTitleElement, {
-                                childList: true,
-                                characterData: true,
-                                subtree: true
-                            });
-                        }
-                        notifyChanges();
-                    });
-
-                    if (document.head) {
-                        headObserver.observe(document.head, {
-                            childList: true,
-                            subtree: true
-                        });
-                    }
-
-                    // ページロード完了時にもチェック
-                    if (document.readyState === 'complete') {
-                        notifyChanges();
-                    } else {
-                        window.addEventListener('load', () => {
-                            notifyChanges();
-                        });
-                    }
-
-                    // DOMContentLoadedでもチェック
-                    if (document.readyState === 'loading') {
-                        document.addEventListener('DOMContentLoaded', () => {
-                            notifyChanges();
-                        });
-                    }
-                    "#,
-                ),
+                .initialization_script(tab_commands::build_content_init_script(&initial_tab_id)),
                 LogicalPosition::new(0.0, 0.0),
                 LogicalSize::new(actual_width, actual_height),
             )?;
-
-            // 起動時にタブが一つもない場合、初期タブを作成
-            {
-                let tab_manager = app.state::<Mutex<TabManager>>();
-                let mut manager = tab_manager.lock().unwrap();
-                if manager.get_all_tabs().is_empty() {
-                    let _initial_tab_id = manager.create_tab("https://google.com".to_string());
-                }
-            }
 
             // Add the UI webview on top (React app for navigation bar)
             // Initially only show trigger area, nav bar appears on hover
@@ -345,13 +264,11 @@ pub fn run() {
                         if let (
                             Some(window),
                             Some(ui_webview),
-                            Some(content_webview),
                             Some(sidebar_webview),
                             Some(cp_webview),
                         ) = (
                             app_handle.get_window("main"),
                             app_handle.get_webview("ui"),
-                            app_handle.get_webview("content"),
                             app_handle.get_webview("sidebar"),
                             app_handle.get_webview("command-palette"),
                         ) {
@@ -368,9 +285,18 @@ pub fn run() {
                             let _ = cp_webview.set_position(LogicalPosition::new(0.0, 0.0));
                             let _ = cp_webview.set_size(LogicalSize::new(width, height));
 
-                            // Content always full size (sidebar overlays on top)
-                            let _ = content_webview.set_position(LogicalPosition::new(0.0, 0.0));
-                            let _ = content_webview.set_size(LogicalSize::new(width, height));
+                            if let Ok(tab_manager) = app_handle.state::<Mutex<TabManager>>().lock() {
+                                for tab in tab_manager.get_all_tabs() {
+                                    if let Some(content_webview) =
+                                        app_handle.get_webview(&tab.webview_label)
+                                    {
+                                        let _ = content_webview
+                                            .set_position(LogicalPosition::new(0.0, 0.0));
+                                        let _ = content_webview
+                                            .set_size(LogicalSize::new(width, height));
+                                    }
+                                }
+                            }
 
                             // UI webview always full width
                             let _ = ui_webview.set_position(LogicalPosition::new(0.0, 0.0));

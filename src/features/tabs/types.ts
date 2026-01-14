@@ -4,6 +4,8 @@ export interface Tab {
   url: string;
   isActive: boolean;
   favicon?: string;
+  lastActiveAt: number;
+  webviewLabel: string;
 }
 
 export interface TabControls {

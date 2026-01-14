@@ -16,34 +16,40 @@ const TRIGGER_HEIGHT: f64 = 8.0;
 pub async fn emit_navigation_update(
     app: &AppHandle,
     history: &State<'_, Mutex<NavigationHistory>>,
+    tab_manager: &State<'_, Mutex<TabManager>>,
 ) {
-    if let (Some(content_webview), Some(ui_webview)) =
-        (app.get_webview("content"), app.get_webview("ui"))
-    {
-        // Get current URL from webview
-        let current_url = content_webview
-            .url()
-            .map(|u| u.to_string())
-            .unwrap_or_default();
+    let active_label = tab_manager
+        .lock()
+        .ok()
+        .and_then(|manager| manager.get_active_webview_label());
 
-        // Get navigation state from history
-        let (can_go_back, can_go_forward) = if let Ok(hist) = history.lock() {
-            (hist.can_go_back(), hist.can_go_forward())
-        } else {
-            (false, false)
-        };
+    if let (Some(active_label), Some(ui_webview)) = (active_label, app.get_webview("ui")) {
+        if let Some(content_webview) = app.get_webview(&active_label) {
+            // Get current URL from webview
+            let current_url = content_webview
+                .url()
+                .map(|u| u.to_string())
+                .unwrap_or_default();
 
-        // Create WebView state
-        let state = WebViewState {
-            current_url,
-            title: String::new(),
-            is_loading: false,
-            can_go_back,
-            can_go_forward,
-        };
+            // Get navigation state from history
+            let (can_go_back, can_go_forward) = if let Ok(hist) = history.lock() {
+                (hist.can_go_back(), hist.can_go_forward())
+            } else {
+                (false, false)
+            };
 
-        // Emit event to UI webview with the navigation state
-        let _ = ui_webview.emit("navigation-updated", state);
+            // Create WebView state
+            let state = WebViewState {
+                current_url,
+                title: String::new(),
+                is_loading: false,
+                can_go_back,
+                can_go_forward,
+            };
+
+            // Emit event to UI webview with the navigation state
+            let _ = ui_webview.emit("navigation-updated", state);
+        }
     }
 }
 
@@ -68,12 +74,22 @@ fn validate_and_normalize_url(url: &str) -> Result<String, String> {
 pub async fn navigate_to_internal(
     app: AppHandle,
     history: State<'_, Mutex<NavigationHistory>>,
+    tab_manager: State<'_, Mutex<TabManager>>,
     url: String,
 ) -> Result<(), String> {
     let normalized_url = validate_and_normalize_url(&url)?;
 
     // Get the content webview (child webview of main window)
-    if let Some(webview) = app.get_webview("content") {
+    let active_label = {
+        let manager = tab_manager
+            .lock()
+            .map_err(|e| format!("Failed to lock tab manager: {}", e))?;
+        manager
+            .get_active_webview_label()
+            .ok_or_else(|| "アクティブなタブがありません".to_string())?
+    };
+
+    if let Some(webview) = app.get_webview(&active_label) {
         let parsed_url: Url = normalized_url
             .parse()
             .map_err(|e| format!("Invalid URL: {}", e))?;
@@ -87,7 +103,7 @@ pub async fn navigate_to_internal(
         }
 
         // Emit navigation update
-        emit_navigation_update(&app, &history).await;
+        emit_navigation_update(&app, &history, &tab_manager).await;
 
         Ok(())
     } else {
@@ -115,17 +131,27 @@ pub async fn navigate_to(
     // Emit tab-updated event to notify sidebar
     let _ = app.emit("tab-updated", ());
 
-    navigate_to_internal(app, history, url).await
+    navigate_to_internal(app, history, tab_manager, url).await
 }
 
 /// Get the current URL of the content webview
 #[tauri::command]
-pub fn get_current_url(app: AppHandle) -> Result<String, String> {
-    if let Some(webview) = app.get_webview("content") {
-        Ok(webview.url().map(|u| u.to_string()).unwrap_or_default())
-    } else {
-        Ok(String::new())
+pub fn get_current_url(
+    app: AppHandle,
+    tab_manager: State<'_, Mutex<TabManager>>,
+) -> Result<String, String> {
+    let active_label = tab_manager
+        .lock()
+        .map_err(|e| format!("Failed to lock tab manager: {}", e))?
+        .get_active_webview_label();
+
+    if let Some(label) = active_label {
+        if let Some(webview) = app.get_webview(&label) {
+            return Ok(webview.url().map(|u| u.to_string()).unwrap_or_default());
+        }
     }
+
+    Ok(String::new())
 }
 
 /// Get the loading state of the content webview
@@ -143,6 +169,7 @@ pub fn set_nav_visible(
     app: AppHandle,
     visible: bool,
     nav_state: State<'_, NavBarState>,
+    tab_manager: State<'_, Mutex<TabManager>>,
 ) -> Result<(), String> {
     // Update shared state
     nav_state.set_visible(visible);
@@ -161,15 +188,15 @@ pub fn set_nav_visible(
     let height = window_size.height as f64 / scale_factor;
 
     let ui_webview = app.get_webview("ui").ok_or("UI webview not found")?;
-    let content_webview = app.get_webview("content").ok_or("Content webview not found")?;
 
-    // Content webview always stays at (0,0) with full size - never moves
-    content_webview
-        .set_position(tauri::LogicalPosition::new(0.0, 0.0))
-        .map_err(|e| format!("Failed to move content webview: {}", e))?;
-    content_webview
-        .set_size(LogicalSize::new(width, height))
-        .map_err(|e| format!("Failed to resize content webview: {}", e))?;
+    if let Ok(manager) = tab_manager.lock() {
+        for tab in manager.get_all_tabs() {
+            if let Some(content_webview) = app.get_webview(&tab.webview_label) {
+                let _ = content_webview.set_position(tauri::LogicalPosition::new(0.0, 0.0));
+                let _ = content_webview.set_size(LogicalSize::new(width, height));
+            }
+        }
+    }
 
     // Only UI webview size changes based on nav visibility
     if visible {
