@@ -1,0 +1,70 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "pedantic": "off",
+    "perf": "warn",
+    "style": "warn"
+  },
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "oxc",
+    "import"
+  ],
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
+  "rules": {
+    // Type Safety - Prohibit `any` type
+    "typescript/no-explicit-any": "error",
+    // Naming Conventions - PascalCase for files
+    "unicorn/filename-case": [
+      "error",
+      {
+        "cases": {
+          "pascalCase": true
+        },
+        "ignore": [
+          "^vite\\.config",
+          "^tsconfig",
+          "^tailwind\\.config",
+          "^\\.oxlintrc",
+          "^\\.oxfmtrc",
+          "^index\\.tsx?$",
+          "^main\\.tsx?$"
+        ]
+      }
+    ],
+    // Import organization
+    "sort-imports": "off",
+    "import/first": "error",
+    "import/newline-after-import": "error",
+    "import/no-duplicates": "error",
+    "import/no-unassigned-import": [
+      "error",
+      {
+        "allow": [
+          "**/*.css"
+        ]
+      }
+    ],
+    // React/SolidJS best practices
+    "oxc/no-const-enum": "error",
+    // General best practices
+    "eslint/no-unused-vars": "warn",
+    "eslint/no-console": "warn",
+    "eslint/no-debugger": "error",
+    "eslint/eqeqeq": "error",
+    "eslint/no-var": "error",
+    "eslint/prefer-const": "warn"
+  },
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "src-tauri/target",
+    "*.d.ts"
+  ]
+}
