@@ -7,22 +7,20 @@
 | Field            | Value                               |
 | ---------------- | ----------------------------------- |
 | **Milestone**    | v1.0                                |
-| **Phase**        | Not started                         |
+| **Phase**        | 1: Foundation                       |
 | **Status**       | Planning complete, ready to execute |
 | **Last Updated** | 2026-01-26                          |
 
 ## Just Completed
 
-- GSDプロジェクト初期化
-- SPEC.md FINALIZED
-- ROADMAP.md 作成（5フェーズ）
-- 全ドキュメント構造確立
+- Phase 1 のディスカッション完了 (ADR-004)
+- Phase 1 の技術調査完了 (RESEARCH.md)
+- Phase 1 の実行計画作成完了 (1.1, 1.2, 1.3-PLAN.md)
 
 ## Next Steps
 
-1. `/discuss-phase 1` — Phase 1のスコープを議論（オプション）
-2. `/plan 1` — Phase 1の詳細タスク計画を作成
-3. `/execute 1` — Phase 1の実装開始
+1. `/execute 1` — Phase 1の実装開始
+2. `/verify 1` — 実装後の検証
 
 ## Active Context
 
