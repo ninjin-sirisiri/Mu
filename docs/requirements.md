@@ -44,6 +44,6 @@
 ## 4. 技術スタック (Tech Stack)
 *   **Core Framework:** **Tauri v2** (Rust + WebView)
 *   **Backend (System):** **Rust** (ウィンドウ制御、ファイルシステム、重い処理)
-*   **Frontend (UI):** **React** + **TypeScript**
+*   **Frontend (UI):** **Solid** + **TypeScript**
 *   **Styling:** **Tailwind CSS**
 *   **State Management:** **Simple Store (@simple-stack/store)** (設定、タブ状態の管理)
