@@ -63,9 +63,10 @@ NAVIGATION & STATE
 /add-todo         Quick capture idea
 /check-todos      List pending items
 
-UTILITIES
-─────────
-/help             Show this help
+ UTILITIES
+ ─────────
+ /commit           Draft message + git commit (no push)
+ /help             Show this help
 
 ───────────────────────────────────────────────────────
 

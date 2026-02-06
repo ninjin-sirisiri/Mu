@@ -38,6 +38,15 @@ def main() -> int:
         print(f"[ERROR] Not a git repository: {e}")
         return 2
 
+    # New repos may have zero commits; git log will fail.
+    try:
+        subprocess.check_output(
+            ["git", "rev-parse", "--verify", "HEAD"], stderr=subprocess.STDOUT
+        )
+    except subprocess.CalledProcessError:
+        print("No commits found (repository has no commits yet).")
+        return 0
+
     n = 50
     subjects_raw = _run_git(["log", f"-{n}", "--pretty=format:%s"])
     subjects = [s.strip() for s in subjects_raw.splitlines() if s.strip()]
