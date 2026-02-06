@@ -1,0 +1,9 @@
+- **Tauri v2（2.10.x）**
+- **Solid（TS）**
+- **Tailwind CSS（v4.x）**
+- **SolidUI（コピペ運用） + Kobalte + corvu**
+- **Bun + create-tauri-app（Solidテンプレ）**
+- **マルチWebViewでタブ実装**（Webview API）
+- **capabilityをWebView単位で分離（外部サイトに権限ゼロ）**
+- **oxlint**
+- **oxfmt**
